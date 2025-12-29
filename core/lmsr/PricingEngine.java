@@ -168,30 +168,35 @@ public class PricingEngine {
     /**
      * Calculate the current market value of a user's YES shares.
      * 
-     * This is an estimate based on current probability, NOT the actual
-     * payout they would receive from selling (which depends on slippage).
+     * This calculates the liquidation value: how much the user would receive
+     * if they sold all their shares immediately.
+     * 
+     * Formula: Value = C(qYes, qNo) - C(qYes - userShares, qNo)
      * 
      * @param userShares Number of YES shares the user owns
      * @param qYes       Current YES shares in market
      * @param qNo        Current NO shares in market
      * @param b          Liquidity parameter
-     * @return Estimated market value
+     * @return Liquidation value
      */
     public static double yesShareMarketValue(double userShares, double qYes, double qNo, double b) {
-        return displayYesPrice(qYes, qNo, b) * userShares;
+        return sellYesPrice(qYes, qNo, b, userShares);
     }
 
     /**
      * Calculate the current market value of a user's NO shares.
      * 
+     * This calculates the liquidation value: how much the user would receive
+     * if they sold all their shares immediately.
+     * 
      * @param userShares Number of NO shares the user owns
      * @param qYes       Current YES shares in market
      * @param qNo        Current NO shares in market
      * @param b          Liquidity parameter
-     * @return Estimated market value
+     * @return Liquidation value (estimated)
      */
     public static double noShareMarketValue(double userShares, double qYes, double qNo, double b) {
-        return displayNoPrice(qYes, qNo, b) * userShares;
+        return sellNoPrice(qYes, qNo, b, userShares);
     }
 
     // ======================== SETTLEMENT ========================
