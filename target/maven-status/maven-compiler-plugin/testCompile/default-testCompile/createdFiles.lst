@@ -1,0 +1,4 @@
+core/lmsr/PricingEngineTest$EdgeCases.class
+core/lmsr/PricingEngineTest.class
+core/lmsr/PricingEngineTest$PricesSumToOne.class
+core/lmsr/PricingEngineTest$PricesBetweenZeroAndOne.class
