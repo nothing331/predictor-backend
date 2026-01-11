@@ -30,26 +30,73 @@ public class TradeEngine {
     public TradeEngine() {
     }
 
-    public Trade executeTrade(User user, Market market, Outcome outcome, int sharesToBuy) {
+    public Trade executeTrade(User user, Market market, Outcome outcome, double sharesToBuy) {
         // Input validation
-        if (sharesToBuy <= 0) {
+        if (sharesToBuy <= 0.0) {
             throw new IllegalArgumentException("Shares to buy must be positive, got: " + sharesToBuy);
         }
 
-        // ========== STEP 1: CALCULATE COST (Pure Read) ==========
-        BigDecimal tradeCost = getTradeCost(market, outcome, sharesToBuy);
+        // ========== PHASE 1: COMPUTE ALL NEW VALUES (Pure Reads, No Mutations)
+        // ==========
 
-        // ========== STEP 2: VALIDATE BALANCE (Guard Rail) ==========
+        // Calculate trade cost
+        BigDecimal tradeCost = market.getCostToBuy(outcome, sharesToBuy);
+
+        // Validate before ANY mutations
         validateTrade(user, market, tradeCost);
 
-        // ========== STEP 3: APPLY MARKET SHARE UPDATE ==========
-        marketShareUpdate(market, outcome, sharesToBuy);
+        // Compute new market share counts
+        double currentQYes = market.getQYes();
+        double currentQNo = market.getQNo();
+        double newQYes = currentQYes;
+        double newQNo = currentQNo;
 
-        // ========== STEP 4: DEDUCT USER BALANCE ==========
-        userBalanceUpdate(user, tradeCost);
+        if (outcome == Outcome.YES) {
+            newQYes = currentQYes + sharesToBuy;
+        } else {
+            newQNo = currentQNo + sharesToBuy;
+        }
 
-        // ========== STEP 5: UPDATE USER POSITION ==========
-        updateUserPosition(user, market, outcome, sharesToBuy);
+        // Compute new user balance
+        BigDecimal newBalance = user.getBalance().subtract(tradeCost);
+
+        // Compute new position shares
+        // NOTE: We do NOT use getOrCreatePosition() here to avoid mutating user state
+        // in Phase 1
+        Position existingPosition = user.getPosition(market.getMarketId());
+        double currentYesShares = (existingPosition != null) ? existingPosition.getYesShares() : 0.0;
+        double currentNoShares = (existingPosition != null) ? existingPosition.getNoShares() : 0.0;
+
+        double newYesShares = currentYesShares;
+        double newNoShares = currentNoShares;
+
+        if (outcome == Outcome.YES) {
+            newYesShares = currentYesShares + sharesToBuy;
+        } else {
+            newNoShares = currentNoShares + sharesToBuy;
+        }
+
+        // ========== PHASE 2: APPLY ALL MUTATIONS ATOMICALLY ==========
+        // All computations succeeded, now apply all state changes together
+
+        // Update market shares
+        if (outcome == Outcome.YES) {
+            market.setQYes(newQYes);
+        } else {
+            market.setQNo(newQNo);
+        }
+
+        // Update user balance
+        user.setBalance(newBalance);
+
+        // Update user position
+        // NOW it is safe to create the position if it doesn't exist
+        Position position = user.getOrCreatePosition(market.getMarketId());
+        if (outcome == Outcome.YES) {
+            position.setYesShares(newYesShares);
+        } else {
+            position.setNoShares(newNoShares);
+        }
 
         // ========== CREATE TRADE RECORD ==========
         return new Trade(
@@ -57,8 +104,7 @@ public class TradeEngine {
                 market.getMarketId(),
                 outcome,
                 sharesToBuy,
-                tradeCost,
-                java.time.Instant.now());
+                tradeCost);
     }
 
     public BigDecimal getTradeCost(Market market, Outcome outcome, int sharesToBuy) {
@@ -66,6 +112,11 @@ public class TradeEngine {
     }
 
     public void validateTrade(User user, Market market, BigDecimal tradeCost) {
+        // Guard: Cost cannot be negative
+        if (tradeCost.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalStateException("Trade cost cannot be negative");
+        }
+
         // Market must be open
         if (market.getStatus() != MarketStatus.OPEN) {
             throw new IllegalStateException("Market is not open for trading: " + market.getMarketId());
@@ -77,20 +128,6 @@ public class TradeEngine {
                     String.format("Insufficient balance. Required: %s, Available: %s",
                             tradeCost, user.getBalance()));
         }
-    }
-
-    public void marketShareUpdate(Market market, Outcome outcome, int sharesToBuy) {
-        market.applyTrade(outcome, sharesToBuy);
-    }
-
-    public void userBalanceUpdate(User user, BigDecimal tradeCost) {
-        BigDecimal newBalance = user.getBalance().subtract(tradeCost);
-        user.setBalance(newBalance);
-    }
-
-    public void updateUserPosition(User user, Market market, Outcome outcome, int sharesToBuy) {
-        Position position = user.getOrCreatePosition(market.getMarketId());
-        position.updatePosition(outcome, sharesToBuy);
     }
 
     public static class InsufficientBalanceException extends RuntimeException {

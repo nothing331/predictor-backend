@@ -36,6 +36,14 @@ public class Market {
         return this.marketId;
     }
 
+    public double getQYes() {
+        return this.qYes;
+    }
+
+    public double getQNo() {
+        return this.qNo;
+    }
+
     public double getYesPrice() {
         return PricingEngine.displayYesPrice(this.qYes, this.qNo, this.liquidity);
     }
@@ -65,23 +73,47 @@ public class Market {
     }
 
     /**
-     * Apply a buy trade to the market.
+     * Set the YES share count atomically.
+     * Used by TradeEngine to enforce atomicity.
      */
-    public void applyTrade(Outcome outcome, double shares) {
-        if (this.status == MarketStatus.OPEN) {
-
-            if (shares <= 0) {
-                throw new IllegalArgumentException("Shares must be positive");
-            }
-
-            // Buying increases the share count in the pool
-            if (outcome == Outcome.YES) {
-                this.qYes += shares;
-            } else {
-                this.qNo += shares;
-            }
+    public void setQYes(double qYes) {
+        if (this.status != MarketStatus.OPEN) {
+            throw new IllegalStateException("Cannot modify shares when market is not open");
         }
-        // NOTE: No price update needed - prices are computed on demand
+        if (qYes < 0) {
+            throw new IllegalArgumentException("qYes cannot be negative");
+        }
+        this.qYes = qYes;
+    }
+
+    /**
+     * Set the NO share count atomically.
+     * Used by TradeEngine to enforce atomicity.
+     */
+    public void setQNo(double qNo) {
+        if (this.status != MarketStatus.OPEN) {
+            throw new IllegalStateException("Cannot modify shares when market is not open");
+        }
+        if (qNo < 0) {
+            throw new IllegalArgumentException("qNo cannot be negative");
+        }
+        this.qNo = qNo;
+    }
+
+    public void applyTrade(Outcome outcome, double shares) {
+        if (this.status != MarketStatus.OPEN) {
+            return;
+        }
+
+        if (shares <= 0) {
+            throw new IllegalArgumentException("Shares must be positive");
+        }
+
+        if (outcome == Outcome.YES) {
+            this.qYes += shares;
+        } else {
+            this.qNo += shares;
+        }
     }
 
     public void resolveMarket(Outcome outcome) {

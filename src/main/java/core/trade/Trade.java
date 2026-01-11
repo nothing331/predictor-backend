@@ -12,8 +12,7 @@ public final class Trade {
     private final double sharesBought;
     private final BigDecimal cost;
 
-    public Trade(String userId2, String marketId2, Outcome outcome2, double sharesBought2, BigDecimal cost2,
-            Instant now) {
+    public Trade(String userId2, String marketId2, Outcome outcome2, double sharesBought2, BigDecimal cost2) {
         this.userId = userId2;
         this.marketId = marketId2;
         this.outcome = outcome2;
