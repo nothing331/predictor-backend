@@ -6,7 +6,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /**
@@ -28,7 +27,7 @@ public class MarketTest {
 
     @BeforeEach
     void setUp() {
-        market = new Market(1, "Test Market", "A test prediction market");
+        market = new Market("1", "Test Market", "A test prediction market");
     }
 
     // ======================== CONSTRUCTOR & INITIALIZATION
@@ -64,7 +63,7 @@ public class MarketTest {
         @DisplayName("Constructor with different parameters creates valid market")
         void constructorWithDifferentParams() {
             // Arrange & Act
-            Market customMarket = new Market(42, "Custom Market", "Custom description");
+            Market customMarket = new Market("42", "Custom Market", "Custom description");
 
             // Assert
             assertEquals(0.5, customMarket.getYesPrice(), EPSILON);
@@ -205,8 +204,8 @@ public class MarketTest {
         @DisplayName("getCostToBuy returns positive value for positive shares")
         void costToBuyIsPositive() {
             // Act
-            double yesCost = market.getCostToBuy(Outcome.YES, 10);
-            double noCost = market.getCostToBuy(Outcome.NO, 10);
+            double yesCost = market.getCostToBuy(Outcome.YES, 10).doubleValue();
+            double noCost = market.getCostToBuy(Outcome.NO, 10).doubleValue();
 
             // Assert
             assertTrue(yesCost > 0, "Cost to buy YES shares should be positive");
@@ -217,9 +216,9 @@ public class MarketTest {
         @DisplayName("Cost increases with more shares")
         void costIncreasesWithMoreShares() {
             // Act
-            double cost10 = market.getCostToBuy(Outcome.YES, 10);
-            double cost50 = market.getCostToBuy(Outcome.YES, 50);
-            double cost100 = market.getCostToBuy(Outcome.YES, 100);
+            double cost10 = market.getCostToBuy(Outcome.YES, 10).doubleValue();
+            double cost50 = market.getCostToBuy(Outcome.YES, 50).doubleValue();
+            double cost100 = market.getCostToBuy(Outcome.YES, 100).doubleValue();
 
             // Assert
             assertTrue(cost50 > cost10, "50 shares should cost more than 10");
@@ -230,8 +229,8 @@ public class MarketTest {
         @DisplayName("Cost is finite for reasonable share amounts")
         void costIsFinite() {
             // Act
-            double yesCost = market.getCostToBuy(Outcome.YES, 1000);
-            double noCost = market.getCostToBuy(Outcome.NO, 1000);
+            double yesCost = market.getCostToBuy(Outcome.YES, 1000).doubleValue();
+            double noCost = market.getCostToBuy(Outcome.NO, 1000).doubleValue();
 
             // Assert
             assertTrue(Double.isFinite(yesCost), "YES cost should be finite");
@@ -245,8 +244,8 @@ public class MarketTest {
             market.applyTrade(Outcome.YES, 100);
 
             // Act
-            double yesCost = market.getCostToBuy(Outcome.YES, 10);
-            double noCost = market.getCostToBuy(Outcome.NO, 10);
+            double yesCost = market.getCostToBuy(Outcome.YES, 10).doubleValue();
+            double noCost = market.getCostToBuy(Outcome.NO, 10).doubleValue();
 
             // Assert - YES should cost more now (higher price)
             assertTrue(yesCost > noCost,
@@ -258,8 +257,8 @@ public class MarketTest {
         @DisplayName("Various share amounts have positive cost")
         void variousShareAmountsHavePositiveCost(double shares) {
             // Act
-            double yesCost = market.getCostToBuy(Outcome.YES, shares);
-            double noCost = market.getCostToBuy(Outcome.NO, shares);
+            double yesCost = market.getCostToBuy(Outcome.YES, shares).doubleValue();
+            double noCost = market.getCostToBuy(Outcome.NO, shares).doubleValue();
 
             // Assert
             assertAll(
@@ -271,11 +270,11 @@ public class MarketTest {
         @DisplayName("Cost reflects market state changes")
         void costReflectsMarketStateChanges() {
             // Arrange
-            double initialYesCost = market.getCostToBuy(Outcome.YES, 10);
+            double initialYesCost = market.getCostToBuy(Outcome.YES, 10).doubleValue();
 
             // Act - buy YES to increase its price
             market.applyTrade(Outcome.YES, 100);
-            double newYesCost = market.getCostToBuy(Outcome.YES, 10);
+            double newYesCost = market.getCostToBuy(Outcome.YES, 10).doubleValue();
 
             // Assert
             assertTrue(newYesCost > initialYesCost,
@@ -475,8 +474,8 @@ public class MarketTest {
         @DisplayName("Identical markets produce identical prices")
         void identicalMarketsProduceIdenticalPrices() {
             // Arrange
-            Market market1 = new Market(1, "Market 1", "Description 1");
-            Market market2 = new Market(2, "Market 2", "Description 2");
+            Market market1 = new Market("1", "Market 1", "Description 1");
+            Market market2 = new Market("2", "Market 2", "Description 2");
 
             // Act - apply same trades to both
             market1.applyTrade(Outcome.YES, 50);
@@ -523,9 +522,9 @@ public class MarketTest {
             market.applyTrade(Outcome.YES, 50);
 
             // Act
-            double cost1 = market.getCostToBuy(Outcome.YES, 25);
-            double cost2 = market.getCostToBuy(Outcome.YES, 25);
-            double cost3 = market.getCostToBuy(Outcome.YES, 25);
+            double cost1 = market.getCostToBuy(Outcome.YES, 25).doubleValue();
+            double cost2 = market.getCostToBuy(Outcome.YES, 25).doubleValue();
+            double cost3 = market.getCostToBuy(Outcome.YES, 25).doubleValue();
 
             // Assert
             assertAll(
@@ -542,7 +541,7 @@ public class MarketTest {
 
             double baselineYes = market.getYesPrice();
             double baselineNo = market.getNoPrice();
-            double baselineCost = market.getCostToBuy(Outcome.YES, 50);
+            double baselineCost = market.getCostToBuy(Outcome.YES, 50).doubleValue();
 
             // Assert - 100 iterations should all match baseline
             for (int i = 0; i < 100; i++) {
@@ -550,7 +549,7 @@ public class MarketTest {
                         "Iteration " + i + ": YES price should match baseline");
                 assertEquals(baselineNo, market.getNoPrice(), 0.0,
                         "Iteration " + i + ": NO price should match baseline");
-                assertEquals(baselineCost, market.getCostToBuy(Outcome.YES, 50), 0.0,
+                assertEquals(baselineCost, market.getCostToBuy(Outcome.YES, 50).doubleValue(), 0.0,
                         "Iteration " + i + ": Cost should match baseline");
             }
         }

@@ -448,7 +448,7 @@ public class PricingEngineTest {
                         double b = 100;
 
                         // Act
-                        double cost = PricingEngine.costFunction(qYes, qNo, b);
+                        double cost = PricingEngine.costFunction(qYes, qNo, b).doubleValue();
 
                         // Assert - C(0,0,b) = b * ln(e^0 + e^0) = b * ln(2)
                         double expectedCost = b * Math.log(2);
@@ -465,8 +465,8 @@ public class PricingEngineTest {
                         double b = 100;
 
                         // Act
-                        double cost1 = PricingEngine.costFunction(q1, q2, b);
-                        double cost2 = PricingEngine.costFunction(q2, q1, b);
+                        double cost1 = PricingEngine.costFunction(q1, q2, b).doubleValue();
+                        double cost2 = PricingEngine.costFunction(q2, q1, b).doubleValue();
 
                         // Assert - C(qYes, qNo) should equal C(qNo, qYes)
                         assertEquals(cost1, cost2, EPSILON,
@@ -482,9 +482,9 @@ public class PricingEngineTest {
                         double b = 100;
 
                         // Act
-                        double costBefore = PricingEngine.costFunction(qYes, qNo, b);
-                        double costAfterYes = PricingEngine.costFunction(qYes + 10, qNo, b);
-                        double costAfterNo = PricingEngine.costFunction(qYes, qNo + 10, b);
+                        double costBefore = PricingEngine.costFunction(qYes, qNo, b).doubleValue();
+                        double costAfterYes = PricingEngine.costFunction(qYes + 10, qNo, b).doubleValue();
+                        double costAfterNo = PricingEngine.costFunction(qYes, qNo + 10, b).doubleValue();
 
                         // Assert - adding shares always increases cost
                         assertTrue(costAfterYes > costBefore,
@@ -502,7 +502,7 @@ public class PricingEngineTest {
                         double b = 100;
 
                         // Act
-                        double costProtected = PricingEngine.costFunction(qYes, qNo, b);
+                        double costProtected = PricingEngine.costFunction(qYes, qNo, b).doubleValue();
                         double costDirect = PricingEngine.costFunctionDirect(qYes, qNo, b);
 
                         // Assert
@@ -519,7 +519,7 @@ public class PricingEngineTest {
                         double b = 100;
 
                         // Act
-                        double cost = PricingEngine.costFunction(qYes, qNo, b);
+                        double cost = PricingEngine.costFunction(qYes, qNo, b).doubleValue();
 
                         // Assert - C(100,100,100) = 100 * ln(e^1 + e^1) = 100 * ln(2*e) = 100 * (1 +
                         // ln(2))
@@ -538,9 +538,9 @@ public class PricingEngineTest {
                         double sharesToBuy = 10;
 
                         // Act
-                        double price = PricingEngine.calculateYesPrice(qYes, qNo, b, sharesToBuy);
-                        double expectedPrice = PricingEngine.costFunction(qYes + sharesToBuy, qNo, b)
-                                        - PricingEngine.costFunction(qYes, qNo, b);
+                        double price = PricingEngine.calculateYesPrice(qYes, qNo, b, sharesToBuy).doubleValue();
+                        double expectedPrice = PricingEngine.costFunction(qYes + sharesToBuy, qNo, b).doubleValue()
+                                        - PricingEngine.costFunction(qYes, qNo, b).doubleValue();
 
                         // Assert
                         assertEquals(expectedPrice, price, EPSILON,
@@ -557,9 +557,9 @@ public class PricingEngineTest {
                         double sharesToBuy = 10;
 
                         // Act
-                        double price = PricingEngine.calculateNoPrice(qYes, qNo, b, sharesToBuy);
-                        double expectedPrice = PricingEngine.costFunction(qYes, qNo + sharesToBuy, b)
-                                        - PricingEngine.costFunction(qYes, qNo, b);
+                        double price = PricingEngine.calculateNoPrice(qYes, qNo, b, sharesToBuy).doubleValue();
+                        double expectedPrice = PricingEngine.costFunction(qYes, qNo + sharesToBuy, b).doubleValue()
+                                        - PricingEngine.costFunction(qYes, qNo, b).doubleValue();
 
                         // Assert
                         assertEquals(expectedPrice, price, EPSILON,
@@ -576,7 +576,7 @@ public class PricingEngineTest {
                         double sharesToBuy = 25;
 
                         // Act
-                        double price = PricingEngine.calculateYesPrice(qYes, qNo, b, sharesToBuy);
+                        double price = PricingEngine.calculateYesPrice(qYes, qNo, b, sharesToBuy).doubleValue();
 
                         // Assert
                         assertTrue(price > 0,
@@ -593,7 +593,7 @@ public class PricingEngineTest {
                         double sharesToBuy = 25;
 
                         // Act
-                        double price = PricingEngine.calculateNoPrice(qYes, qNo, b, sharesToBuy);
+                        double price = PricingEngine.calculateNoPrice(qYes, qNo, b, sharesToBuy).doubleValue();
 
                         // Assert
                         assertTrue(price > 0,
@@ -609,9 +609,9 @@ public class PricingEngineTest {
                         double b = 100;
 
                         // Act
-                        double price5 = PricingEngine.calculateYesPrice(qYes, qNo, b, 5);
-                        double price10 = PricingEngine.calculateYesPrice(qYes, qNo, b, 10);
-                        double price20 = PricingEngine.calculateYesPrice(qYes, qNo, b, 20);
+                        double price5 = PricingEngine.calculateYesPrice(qYes, qNo, b, 5).doubleValue();
+                        double price10 = PricingEngine.calculateYesPrice(qYes, qNo, b, 10).doubleValue();
+                        double price20 = PricingEngine.calculateYesPrice(qYes, qNo, b, 20).doubleValue();
 
                         // Assert
                         assertTrue(price10 > price5, "Buying 10 shares should cost more than 5");
@@ -627,9 +627,9 @@ public class PricingEngineTest {
                         double b = 100;
 
                         // Act
-                        double price5 = PricingEngine.calculateNoPrice(qYes, qNo, b, 5);
-                        double price10 = PricingEngine.calculateNoPrice(qYes, qNo, b, 10);
-                        double price20 = PricingEngine.calculateNoPrice(qYes, qNo, b, 20);
+                        double price5 = PricingEngine.calculateNoPrice(qYes, qNo, b, 5).doubleValue();
+                        double price10 = PricingEngine.calculateNoPrice(qYes, qNo, b, 10).doubleValue();
+                        double price20 = PricingEngine.calculateNoPrice(qYes, qNo, b, 20).doubleValue();
 
                         // Assert
                         assertTrue(price10 > price5, "Buying 10 shares should cost more than 5");
@@ -649,8 +649,8 @@ public class PricingEngineTest {
                 @DisplayName("Parameterized: Cost functions work across various scenarios")
                 void costFunctionsVariousScenarios(double qYes, double qNo, double b, double shares) {
                         // Act
-                        double yesPrice = PricingEngine.calculateYesPrice(qYes, qNo, b, shares);
-                        double noPrice = PricingEngine.calculateNoPrice(qYes, qNo, b, shares);
+                        double yesPrice = PricingEngine.calculateYesPrice(qYes, qNo, b, shares).doubleValue();
+                        double noPrice = PricingEngine.calculateNoPrice(qYes, qNo, b, shares).doubleValue();
 
                         // Assert - both prices should be positive and finite
                         assertAll(
@@ -669,7 +669,7 @@ public class PricingEngineTest {
                         double b = 100;
 
                         // Act
-                        double cost = PricingEngine.costFunction(qYes, qNo, b);
+                        double cost = PricingEngine.costFunction(qYes, qNo, b).doubleValue();
 
                         // Assert - should not overflow to Infinity
                         assertTrue(Double.isFinite(cost),
@@ -694,9 +694,9 @@ public class PricingEngineTest {
                         double b = 100;
 
                         // Act - call multiple times
-                        double cost1 = PricingEngine.costFunction(qYes, qNo, b);
-                        double cost2 = PricingEngine.costFunction(qYes, qNo, b);
-                        double cost3 = PricingEngine.costFunction(qYes, qNo, b);
+                        double cost1 = PricingEngine.costFunction(qYes, qNo, b).doubleValue();
+                        double cost2 = PricingEngine.costFunction(qYes, qNo, b).doubleValue();
+                        double cost3 = PricingEngine.costFunction(qYes, qNo, b).doubleValue();
 
                         // Assert - all calls should return exactly the same value
                         assertAll(
@@ -718,9 +718,9 @@ public class PricingEngineTest {
                         double shares = 15;
 
                         // Act - call multiple times
-                        double price1 = PricingEngine.calculateYesPrice(qYes, qNo, b, shares);
-                        double price2 = PricingEngine.calculateYesPrice(qYes, qNo, b, shares);
-                        double price3 = PricingEngine.calculateYesPrice(qYes, qNo, b, shares);
+                        double price1 = PricingEngine.calculateYesPrice(qYes, qNo, b, shares).doubleValue();
+                        double price2 = PricingEngine.calculateYesPrice(qYes, qNo, b, shares).doubleValue();
+                        double price3 = PricingEngine.calculateYesPrice(qYes, qNo, b, shares).doubleValue();
 
                         // Assert - all calls should return exactly the same value
                         assertAll(
@@ -740,9 +740,9 @@ public class PricingEngineTest {
                         double shares = 20;
 
                         // Act - call multiple times
-                        double price1 = PricingEngine.calculateNoPrice(qYes, qNo, b, shares);
-                        double price2 = PricingEngine.calculateNoPrice(qYes, qNo, b, shares);
-                        double price3 = PricingEngine.calculateNoPrice(qYes, qNo, b, shares);
+                        double price1 = PricingEngine.calculateNoPrice(qYes, qNo, b, shares).doubleValue();
+                        double price2 = PricingEngine.calculateNoPrice(qYes, qNo, b, shares).doubleValue();
+                        double price3 = PricingEngine.calculateNoPrice(qYes, qNo, b, shares).doubleValue();
 
                         // Assert - all calls should return exactly the same value
                         assertAll(
@@ -804,18 +804,18 @@ public class PricingEngineTest {
                         double shares = 10;
 
                         // Act - first round
-                        double costA = PricingEngine.costFunction(qYes, qNo, b);
-                        double yesPriceA = PricingEngine.calculateYesPrice(qYes, qNo, b, shares);
-                        double noPriceA = PricingEngine.calculateNoPrice(qYes, qNo, b, shares);
+                        double costA = PricingEngine.costFunction(qYes, qNo, b).doubleValue();
+                        double yesPriceA = PricingEngine.calculateYesPrice(qYes, qNo, b, shares).doubleValue();
+                        double noPriceA = PricingEngine.calculateNoPrice(qYes, qNo, b, shares).doubleValue();
                         double displayYesA = PricingEngine.displayYesPrice(qYes, qNo, b);
                         double displayNoA = PricingEngine.displayNoPrice(qYes, qNo, b);
 
                         // Act - second round (interleaved order)
                         double displayNoB = PricingEngine.displayNoPrice(qYes, qNo, b);
-                        double noPriceB = PricingEngine.calculateNoPrice(qYes, qNo, b, shares);
+                        double noPriceB = PricingEngine.calculateNoPrice(qYes, qNo, b, shares).doubleValue();
                         double displayYesB = PricingEngine.displayYesPrice(qYes, qNo, b);
-                        double yesPriceB = PricingEngine.calculateYesPrice(qYes, qNo, b, shares);
-                        double costB = PricingEngine.costFunction(qYes, qNo, b);
+                        double yesPriceB = PricingEngine.calculateYesPrice(qYes, qNo, b, shares).doubleValue();
+                        double costB = PricingEngine.costFunction(qYes, qNo, b).doubleValue();
 
                         // Assert - results should match regardless of call order
                         assertAll(
@@ -840,14 +840,15 @@ public class PricingEngineTest {
                         double shares = 50;
 
                         // Act - get baseline
-                        double baselineCost = PricingEngine.costFunction(qYes, qNo, b);
-                        double baselineYesPrice = PricingEngine.calculateYesPrice(qYes, qNo, b, shares);
+                        double baselineCost = PricingEngine.costFunction(qYes, qNo, b).doubleValue();
+                        double baselineYesPrice = PricingEngine.calculateYesPrice(qYes, qNo, b, shares).doubleValue();
 
                         // Assert - 100 iterations should all match baseline
                         for (int i = 0; i < 100; i++) {
-                                assertEquals(baselineCost, PricingEngine.costFunction(qYes, qNo, b), 0.0,
+                                assertEquals(baselineCost, PricingEngine.costFunction(qYes, qNo, b).doubleValue(), 0.0,
                                                 "Iteration " + i + ": costFunction should match baseline");
-                                assertEquals(baselineYesPrice, PricingEngine.calculateYesPrice(qYes, qNo, b, shares),
+                                assertEquals(baselineYesPrice,
+                                                PricingEngine.calculateYesPrice(qYes, qNo, b, shares).doubleValue(),
                                                 0.0,
                                                 "Iteration " + i + ": calculateYesPrice should match baseline");
                         }
