@@ -1,5 +1,7 @@
 package core.lmsr;
 
+import java.math.BigDecimal;
+
 /**
  * LMSR (Logarithmic Market Scoring Rule) Pricing Engine
  * 
@@ -41,11 +43,11 @@ public class PricingEngine {
      * @param b    Liquidity parameter
      * @return The cost function value
      */
-    public static double costFunction(double qYes, double qNo, double b) {
+    public static BigDecimal costFunction(double qYes, double qNo, double b) {
         // Log-sum-exp trick: log(e^a + e^b) = max(a,b) + log(e^(a-max) + e^(b-max))
         // This prevents overflow when a or b are very large
         double maxQ = Math.max(qYes / b, qNo / b);
-        return b * (maxQ + Math.log(Math.exp(qYes / b - maxQ) + Math.exp(qNo / b - maxQ)));
+        return BigDecimal.valueOf(b * (maxQ + Math.log(Math.exp(qYes / b - maxQ) + Math.exp(qNo / b - maxQ))));
     }
 
     /**
@@ -77,8 +79,8 @@ public class PricingEngine {
      * @param yesSharesToBuy Number of YES shares to purchase (positive)
      * @return Cost in market currency to buy these shares
      */
-    public static double calculateYesPrice(double qYes, double qNo, double b, double yesSharesToBuy) {
-        return costFunction(qYes + yesSharesToBuy, qNo, b) - costFunction(qYes, qNo, b);
+    public static BigDecimal calculateYesPrice(double qYes, double qNo, double b, double yesSharesToBuy) {
+        return costFunction(qYes + yesSharesToBuy, qNo, b).subtract(costFunction(qYes, qNo, b));
     }
 
     /**
@@ -90,8 +92,8 @@ public class PricingEngine {
      * @param noSharesToBuy Number of NO shares to purchase (positive)
      * @return Cost in market currency to buy these shares
      */
-    public static double calculateNoPrice(double qYes, double qNo, double b, double noSharesToBuy) {
-        return costFunction(qYes, qNo + noSharesToBuy, b) - costFunction(qYes, qNo, b);
+    public static BigDecimal calculateNoPrice(double qYes, double qNo, double b, double noSharesToBuy) {
+        return costFunction(qYes, qNo + noSharesToBuy, b).subtract(costFunction(qYes, qNo, b));
     }
 
     // ======================== SELLING SHARES ========================
@@ -110,8 +112,8 @@ public class PricingEngine {
      * @param yesSharesToSell Number of YES shares to sell (positive value)
      * @return Amount the user receives from selling
      */
-    public static double sellYesPrice(double qYes, double qNo, double b, double yesSharesToSell) {
-        return costFunction(qYes, qNo, b) - costFunction(qYes - yesSharesToSell, qNo, b);
+    public static BigDecimal sellYesPrice(double qYes, double qNo, double b, double yesSharesToSell) {
+        return costFunction(qYes, qNo, b).subtract(costFunction(qYes - yesSharesToSell, qNo, b));
     }
 
     /**
@@ -123,8 +125,8 @@ public class PricingEngine {
      * @param noSharesToSell Number of NO shares to sell (positive value)
      * @return Amount the user receives from selling
      */
-    public static double sellNoPrice(double qYes, double qNo, double b, double noSharesToSell) {
-        return costFunction(qYes, qNo, b) - costFunction(qYes, qNo - noSharesToSell, b);
+    public static BigDecimal sellNoPrice(double qYes, double qNo, double b, double noSharesToSell) {
+        return costFunction(qYes, qNo, b).subtract(costFunction(qYes, qNo - noSharesToSell, b));
     }
 
     // ======================== PRICE / PROBABILITY ========================
@@ -163,6 +165,7 @@ public class PricingEngine {
         return 1 - displayYesPrice(qYes, qNo, b);
     }
 
+    // ! THINGS DO NOT MAKE SENSE HERE
     // ======================== MARKET VALUE ========================
 
     /**
@@ -179,7 +182,7 @@ public class PricingEngine {
      * @param b          Liquidity parameter
      * @return Liquidation value
      */
-    public static double yesShareMarketValue(double userShares, double qYes, double qNo, double b) {
+    public static BigDecimal yesShareMarketValue(double userShares, double qYes, double qNo, double b) {
         return sellYesPrice(qYes, qNo, b, userShares);
     }
 
@@ -195,7 +198,7 @@ public class PricingEngine {
      * @param b          Liquidity parameter
      * @return Liquidation value (estimated)
      */
-    public static double noShareMarketValue(double userShares, double qYes, double qNo, double b) {
+    public static BigDecimal noShareMarketValue(double userShares, double qYes, double qNo, double b) {
         return sellNoPrice(qYes, qNo, b, userShares);
     }
 
@@ -254,11 +257,11 @@ public class PricingEngine {
 
         while (high - low > epsilon) {
             double mid = (low + high) / 2;
-            double cost = isYes
+            BigDecimal cost = isYes
                     ? calculateYesPrice(qYes, qNo, b, mid)
                     : calculateNoPrice(qYes, qNo, b, mid);
 
-            if (cost < amount) {
+            if (cost.doubleValue() < amount) {
                 low = mid;
             } else {
                 high = mid;
@@ -281,9 +284,9 @@ public class PricingEngine {
      */
     public static boolean canAffordTrade(double sharesToBuy, double qYes, double qNo, double b,
             boolean isYes, double userBalance) {
-        double cost = isYes
+        BigDecimal cost = isYes
                 ? calculateYesPrice(qYes, qNo, b, sharesToBuy)
                 : calculateNoPrice(qYes, qNo, b, sharesToBuy);
-        return cost <= userBalance;
+        return cost.doubleValue() <= userBalance;
     }
 }

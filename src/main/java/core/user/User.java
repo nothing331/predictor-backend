@@ -5,21 +5,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Represents a user in the prediction market system.
- * 
- * A user owns:
- * - A unique, immutable userId
- * - A balance (free currency, using BigDecimal for precision)
- * - Positions (share holdings per market)
- * 
- * Users exist independently of markets.
- * 
- * @author Prediction Market Team
- */
 public class User {
 
-    /** Default starting balance for new users */
     public static final BigDecimal DEFAULT_STARTING_BALANCE = new BigDecimal("1000.00");
 
     private final String userId;
@@ -66,5 +53,20 @@ public class User {
 
     public Position getOrCreatePosition(String marketId) {
         return positions.computeIfAbsent(marketId, Position::new);
+    }
+
+    /**
+     * Set the user's balance to a new value.
+     * 
+     * @param newBalance The new balance (must not be null or negative)
+     */
+    public void setBalance(BigDecimal newBalance) {
+        if (newBalance == null) {
+            throw new IllegalArgumentException("balance cannot be null");
+        }
+        if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("balance cannot be negative");
+        }
+        this.balance = newBalance;
     }
 }

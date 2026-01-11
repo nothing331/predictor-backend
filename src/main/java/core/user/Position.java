@@ -1,5 +1,7 @@
 package core.user;
 
+import core.market.Outcome;
+
 /**
  * Represents a user's position (share holdings) in a specific market.
  * 
@@ -38,5 +40,13 @@ public class Position {
 
     public double getNoShares() {
         return noShares;
+    }
+
+    public void updatePosition(Outcome outcome, int sharesToBuy) {
+        if (outcome == Outcome.YES) {
+            this.yesShares += sharesToBuy;
+        } else {
+            this.noShares += sharesToBuy;
+        }
     }
 }

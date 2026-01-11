@@ -1,12 +1,10 @@
 package core.market;
 
+import java.math.BigDecimal;
 import core.lmsr.PricingEngine;
 
-/**
- * Represents a prediction market using LMSR pricing.
- */
 public class Market {
-    private int marketId;
+    private String marketId;
     private String marketName;
     private String marketDescription;
     private double qYes; // Total YES shares in the market pool
@@ -15,7 +13,7 @@ public class Market {
     private MarketStatus status;
     private Outcome resolvedOutcome;
 
-    public Market(int marketId, String marketName, String marketDescription) {
+    public Market(String marketId, String marketName, String marketDescription) {
         this.marketId = marketId;
         this.marketName = marketName;
         this.marketDescription = marketDescription;
@@ -26,12 +24,18 @@ public class Market {
         this.resolvedOutcome = null;
     }
 
-    /**
-     * Get the current YES price/probability.
-     * This is computed dynamically from the cost function derivative.
-     * 
-     * @return Price between 0.0 and 1.0
-     */
+    public MarketStatus getStatus() {
+        return this.status;
+    }
+
+    public double getLiquidity() {
+        return this.liquidity;
+    }
+
+    public String getMarketId() {
+        return this.marketId;
+    }
+
     public double getYesPrice() {
         return PricingEngine.displayYesPrice(this.qYes, this.qNo, this.liquidity);
     }
@@ -51,7 +55,7 @@ public class Market {
     /**
      * Calculate the cost to buy shares of a given outcome.
      */
-    public double getCostToBuy(Outcome outcome, double shares) {
+    public BigDecimal getCostToBuy(Outcome outcome, double shares) {
         if (outcome == Outcome.YES) {
 
             return PricingEngine.calculateYesPrice(this.qYes, this.qNo, this.liquidity, shares);
