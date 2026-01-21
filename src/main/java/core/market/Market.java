@@ -48,6 +48,10 @@ public class Market {
         return PricingEngine.displayYesPrice(this.qYes, this.qNo, this.liquidity);
     }
 
+    public Outcome getResolvedOutcome() {
+        return this.resolvedOutcome;
+    }
+
     /**
      * Get the current NO price/probability.
      * This is computed dynamically from the cost function derivative.
@@ -102,7 +106,8 @@ public class Market {
 
     public void applyTrade(Outcome outcome, double shares) {
         if (this.status != MarketStatus.OPEN) {
-            return;
+            throw new IllegalStateException("Cannot trade on non-open market");
+
         }
 
         if (shares <= 0) {
@@ -116,10 +121,17 @@ public class Market {
         }
     }
 
-    public void resolveMarket(Outcome outcome) {
-        if (this.status != MarketStatus.RESOLVED) {
-            this.resolvedOutcome = outcome;
-            this.status = MarketStatus.RESOLVED;
+    // ? on expansion a DB check is still needed
+    public synchronized void resolveMarket(Outcome outcome) {
+        if (outcome == null)
+            throw new IllegalArgumentException("Outcome cannot be null");
+        if (status == MarketStatus.RESOLVED)
+            throw new IllegalStateException("Market already resolved");
+        if (status != MarketStatus.OPEN) {
+            throw new IllegalStateException("Only OPEN markets can be resolved");
         }
+
+        resolvedOutcome = outcome;
+        status = MarketStatus.RESOLVED;
     }
 }

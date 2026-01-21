@@ -13,17 +13,20 @@ public class Position {
     private final String marketId;
     private double yesShares;
     private double noShares;
+    private boolean settled;
 
     public Position(String marketId) {
         this.marketId = marketId;
         this.yesShares = 0.0;
         this.noShares = 0.0;
+        this.settled = false;
     }
 
     public Position(String marketId, double yesShares, double noShares) {
         this.marketId = marketId;
         this.yesShares = yesShares;
         this.noShares = noShares;
+        this.settled = false;
     }
 
     // ======================== GETTERS ========================
@@ -52,5 +55,31 @@ public class Position {
             throw new IllegalArgumentException("noShares cannot be negative");
         }
         this.noShares = noShares;
+    }
+
+    // ======================== SETTLEMENT ========================
+
+    public boolean isSettled() {
+        return settled;
+    }
+
+    /**
+     * Mark this position as settled.
+     * Once settled, the position cannot be settled again.
+     */
+    public void markAsSettled() {
+        if (this.settled) {
+            throw new IllegalStateException("Position already settled");
+        }
+        this.settled = true;
+    }
+
+    /**
+     * Clear all shares from this position (used during settlement).
+     * Sets both YES and NO shares to 0.
+     */
+    public void clearShares() {
+        this.yesShares = 0.0;
+        this.noShares = 0.0;
     }
 }
