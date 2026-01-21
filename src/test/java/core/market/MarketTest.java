@@ -436,13 +436,17 @@ public class MarketTest {
             market.resolveMarket(Outcome.YES);
             double priceAfterFirstResolve = market.getYesPrice();
 
-            // Act - try to resolve again
-            market.resolveMarket(Outcome.NO);
+            // Act & Assert - trying to resolve again should throw
+            assertThrows(IllegalStateException.class,
+                    () -> market.resolveMarket(Outcome.NO),
+                    "Re-resolving should throw IllegalStateException");
+
+            // Trying to apply trade after resolution should be ignored
             market.applyTrade(Outcome.NO, 200);
 
             // Assert - state should not change
             assertEquals(priceAfterFirstResolve, market.getYesPrice(), EPSILON,
-                    "Re-resolving should not change market state");
+                    "Re-resolving attempt should not change market state");
         }
 
         @Test
