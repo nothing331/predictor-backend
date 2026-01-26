@@ -2,8 +2,6 @@ package core.settlement;
 
 import java.math.BigDecimal;
 import java.util.Collection;
-import java.util.ArrayList;
-import java.util.List;
 
 import core.market.Market;
 import core.market.MarketStatus;
@@ -29,6 +27,7 @@ public class SettlementEngine {
 
             settleUser(user, market);
         }
+        // Note: Caller must persist state (Markets, Users) after settlement completes.
     }
 
     public void settleUser(User user, Market market) {

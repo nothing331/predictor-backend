@@ -14,6 +14,7 @@ public class Position {
     private double yesShares;
     private double noShares;
     private boolean settled;
+    private String userId;
 
     public Position(String marketId) {
         this.marketId = marketId;
@@ -22,11 +23,12 @@ public class Position {
         this.settled = false;
     }
 
-    public Position(String marketId, double yesShares, double noShares) {
+    public Position(String marketId, double yesShares, double noShares, String userId) {
         this.marketId = marketId;
         this.yesShares = yesShares;
         this.noShares = noShares;
         this.settled = false;
+        this.userId = userId;
     }
 
     // ======================== GETTERS ========================

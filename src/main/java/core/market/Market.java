@@ -24,6 +24,12 @@ public class Market {
         this.resolvedOutcome = null;
     }
 
+    /**
+     * Default constructor for frameworks (e.g., Jackson).
+     */
+    protected Market() {
+    }
+
     public MarketStatus getStatus() {
         return this.status;
     }
