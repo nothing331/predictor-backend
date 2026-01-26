@@ -1,5 +1,6 @@
 package core.service;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import core.trade.Trade;
 import core.repository.TradeRepository;
@@ -35,13 +36,24 @@ public class TradeService {
             throw new IllegalArgumentException("Trade cannot be null");
         }
 
-        // Validate userId is present
         if (trade.getUserId() == null || trade.getUserId().trim().isEmpty()) {
             throw new IllegalStateException("Trade userId cannot be null or empty");
         }
 
         if (trade.getMarketId() == null || trade.getMarketId().trim().isEmpty()) {
             throw new IllegalStateException("Trade marketId cannot be null or empty");
+        }
+
+        if (trade.getShareCount() < 0) {
+            throw new IllegalStateException("Trade shareCount cannot be less than");
+        }
+
+        if (trade.getCost() == null || trade.getCost().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException("Trade cost cannot be null or less than or equal to 0");
+        }
+
+        if (trade.getCreatedAt() == null) {
+            throw new IllegalStateException("Trade timeStamp cannot be null");
         }
     }
 }

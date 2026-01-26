@@ -105,6 +105,8 @@ public class TradeEngine {
                 outcome,
                 sharesToBuy,
                 tradeCost);
+        // Note: The caller (PredictionMarketGame) is responsible for persisting
+        // the state (Market, User, Trade) immediately after this method returns.
     }
 
     public BigDecimal getTradeCost(Market market, Outcome outcome, int sharesToBuy) {
