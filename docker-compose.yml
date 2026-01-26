@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine  # Use Alpine for smaller image size
+    container_name: prediction_market_db
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: prediction_market
+      POSTGRES_USER: market_user
+      POSTGRES_PASSWORD: dev_password_123  # Change in production!
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d  # Auto-run SQL on first start
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U market_user -d prediction_market"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local
