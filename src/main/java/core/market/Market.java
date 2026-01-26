@@ -1,6 +1,9 @@
 package core.market;
 
 import java.math.BigDecimal;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import core.lmsr.PricingEngine;
 
 public class Market {
@@ -85,7 +88,10 @@ public class Market {
     /**
      * Set the YES share count atomically.
      * Used by TradeEngine to enforce atomicity.
+     * 
+     * @deprecated Use direct field access for deserialization.
      */
+    @JsonIgnore
     public void setQYes(double qYes) {
         if (this.status != MarketStatus.OPEN) {
             throw new IllegalStateException("Cannot modify shares when market is not open");
@@ -99,7 +105,10 @@ public class Market {
     /**
      * Set the NO share count atomically.
      * Used by TradeEngine to enforce atomicity.
+     * 
+     * @deprecated Use direct field access for deserialization.
      */
+    @JsonIgnore
     public void setQNo(double qNo) {
         if (this.status != MarketStatus.OPEN) {
             throw new IllegalStateException("Cannot modify shares when market is not open");

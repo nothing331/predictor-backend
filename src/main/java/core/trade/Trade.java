@@ -7,13 +7,19 @@ import java.util.UUID;
 
 public final class Trade {
 
-    private final String userId;
-    private final String marketId;
-    private final Outcome outcome;
-    private final double sharesBought;
-    private final BigDecimal cost;
-    private final Instant createdAt;
-    private final String tradeId;
+    private String userId;
+    private String marketId;
+    private Outcome outcome;
+    private double sharesBought;
+    private BigDecimal cost;
+    private Instant createdAt;
+    private String tradeId;
+
+    /**
+     * Default constructor for frameworks (e.g., Jackson).
+     */
+    protected Trade() {
+    }
 
     public Trade(String userId2, String marketId2, Outcome outcome2, double sharesBought2, BigDecimal cost2) {
         this.userId = userId2;
@@ -43,5 +49,13 @@ public final class Trade {
 
     public Instant getCreatedAt() {
         return this.createdAt;
+    }
+
+    public Outcome getOutcome() {
+        return this.outcome;
+    }
+
+    public String getTradeId() {
+        return this.tradeId;
     }
 }

@@ -10,11 +10,17 @@ package core.user;
  */
 public class Position {
 
-    private final String marketId;
+    private String marketId;
     private double yesShares;
     private double noShares;
     private boolean settled;
     private String userId;
+
+    /**
+     * Default constructor for frameworks (e.g., Jackson).
+     */
+    protected Position() {
+    }
 
     public Position(String marketId) {
         this.marketId = marketId;

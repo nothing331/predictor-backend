@@ -9,9 +9,16 @@ public class User {
 
     public static final BigDecimal DEFAULT_STARTING_BALANCE = new BigDecimal("1000.00");
 
-    private final String userId;
+    private String userId;
     private BigDecimal balance;
-    private final Map<String, Position> positions;
+    private Map<String, Position> positions;
+
+    /**
+     * Default constructor for frameworks (e.g., Jackson).
+     */
+    protected User() {
+        this.positions = new HashMap<>();
+    }
 
     public User(String userId) {
         this(userId, DEFAULT_STARTING_BALANCE);
