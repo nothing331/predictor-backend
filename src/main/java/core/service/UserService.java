@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import core.user.User;
+import core.user.NewUser;
 import core.user.Position;
 import core.repository.UserRepository;
 
@@ -34,6 +35,23 @@ public class UserService {
             }
         }
         return users;
+    }
+
+    public boolean addUser(NewUser newUser) {
+        Collection<User> storedUsers = loadAll();
+
+        boolean exists = storedUsers.stream()
+                .anyMatch(u -> u.getUserId().equalsIgnoreCase(newUser.getUserId()));
+
+        if (exists) {
+            return false;
+        }
+
+        User user = new User(newUser.getUserId());
+        storedUsers.add(user);
+
+        saveAll(storedUsers);
+        return true;
     }
 
     private void validateUser(User user) {
