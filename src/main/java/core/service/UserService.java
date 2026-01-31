@@ -3,10 +3,13 @@ package core.service;
 import java.util.Collection;
 import java.util.Map;
 
+import org.springframework.stereotype.Service;
+
 import core.user.User;
 import core.user.Position;
 import core.repository.UserRepository;
 
+@Service
 public class UserService {
     private final UserRepository repository;
 

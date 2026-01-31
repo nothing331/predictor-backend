@@ -6,6 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -14,6 +16,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import core.user.User;
 
+@Component
 public class FileUserRepository {
     private static final String DATA_FILE_PATH = "data/users.json";
     private final ObjectMapper mapper;

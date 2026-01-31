@@ -2,9 +2,13 @@ package core.service;
 
 import java.math.BigDecimal;
 import java.util.Collection;
+
+import org.springframework.stereotype.Service;
+
 import core.trade.Trade;
 import core.repository.TradeRepository;
 
+@Service
 public class TradeService {
     private final TradeRepository repository;
 

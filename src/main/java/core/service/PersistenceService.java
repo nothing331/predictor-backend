@@ -2,10 +2,13 @@ package core.service;
 
 import java.util.Collection;
 
+import org.springframework.stereotype.Service;
+
 import core.market.Market;
 import core.trade.Trade;
 import core.user.User;
 
+@Service
 public class PersistenceService {
     private final MarketService marketService;
     private final TradeService tradeService;

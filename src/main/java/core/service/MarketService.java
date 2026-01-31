@@ -2,10 +2,13 @@ package core.service;
 
 import java.util.Collection;
 
+import org.springframework.stereotype.Service;
+
 import core.market.Market;
 import core.market.MarketStatus;
 import core.repository.MarketRepository;
 
+@Service
 public class MarketService {
     private final MarketRepository repository;
 

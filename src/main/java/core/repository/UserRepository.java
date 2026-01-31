@@ -2,21 +2,25 @@ package core.repository;
 
 import java.util.Collection;
 
+import org.springframework.stereotype.Repository;
+
 import core.user.User;
 import core.repository.file.FileUserRepository;
 
+@Repository
 public class UserRepository {
 
-    public UserRepository() {
+    private final FileUserRepository fileUserRepository;
+
+    public UserRepository(FileUserRepository fileUserRepository) {
+        this.fileUserRepository = fileUserRepository;
     }
 
     public void saveAll(Collection<User> users) {
-        FileUserRepository fileUserRepository = new FileUserRepository();
         fileUserRepository.saveAllToJson(users);
     }
 
     public Collection<User> loadAll() {
-        FileUserRepository fileUserRepository = new FileUserRepository();
         return fileUserRepository.loadAllFromJson();
     }
 }
