@@ -3,12 +3,15 @@ package core.settlement;
 import java.math.BigDecimal;
 import java.util.Collection;
 
+import org.springframework.stereotype.Component;
+
 import core.market.Market;
 import core.market.MarketStatus;
 import core.market.Outcome;
 import core.user.Position;
 import core.user.User;
 
+@Component
 public class SettlementEngine {
 
     public void settleMarket(Market market, Collection<User> users) {

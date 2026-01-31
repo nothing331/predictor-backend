@@ -2,6 +2,8 @@ package core.trade;
 
 import java.math.BigDecimal;
 
+import org.springframework.stereotype.Component;
+
 import core.market.Market;
 import core.market.MarketStatus;
 import core.market.Outcome;
@@ -25,6 +27,7 @@ import core.user.User;
  * 
  * If ANY step fails, NOTHING changes. This is atomicity.
  */
+@Component
 public class TradeEngine {
 
     public TradeEngine() {
