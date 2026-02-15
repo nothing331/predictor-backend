@@ -161,4 +161,23 @@ public class Market {
         resolvedOutcome = outcome;
         status = MarketStatus.RESOLVED;
     }
+
+    public void validate() {
+        if (this.status == null) {
+            throw new IllegalStateException("Market status cannot be null for market: " + this.marketId);
+        }
+        // Liquidity check
+        if (Double.isNaN(this.liquidity) || Double.isInfinite(this.liquidity)
+                || this.liquidity <= 0) {
+            throw new IllegalStateException("Invalid liquidity for market: " + this.marketId);
+        }
+
+        // Outcome resolution check
+        if (this.status == MarketStatus.RESOLVED && this.resolvedOutcome == null) {
+            throw new IllegalStateException("Resolved market must have a resolved outcome: " + this.marketId);
+        }
+        if (this.status == MarketStatus.OPEN && this.resolvedOutcome != null) {
+            throw new IllegalStateException("Open market cannot have a resolved outcome: " + this.marketId);
+        }
+    }
 }

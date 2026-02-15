@@ -76,4 +76,40 @@ public class User {
         }
         this.balance = newBalance;
     }
+
+    public void validate() {
+        if (userId == null || userId.trim().isEmpty()) {
+            throw new IllegalStateException("User userId cannot be null or empty");
+        }
+        if (balance == null) {
+            throw new IllegalStateException("User balance cannot be null for user: " + userId);
+        }
+
+        // Validate positions map structure: marketId -> Position
+        if (positions != null) {
+            for (Map.Entry<String, Position> entry : positions.entrySet()) {
+                String marketId = entry.getKey();
+                Position position = entry.getValue();
+
+                // Validate marketId is not null or empty
+                if (marketId == null || marketId.trim().isEmpty()) {
+                    throw new IllegalStateException(
+                            "Position marketId cannot be null or empty for user: " + userId);
+                }
+
+                // Validate position is not null
+                if (position == null) {
+                    throw new IllegalStateException(
+                            "Position cannot be null for marketId: " + marketId + " in user: " + userId);
+                }
+
+                // Validate that the position's marketId matches the map key
+                if (!marketId.equals(position.getMarketId())) {
+                    throw new IllegalStateException("Position marketId mismatch: map key is " + marketId +
+                            " but position.getMarketId() is " + position.getMarketId() + " for user: "
+                            + userId);
+                }
+            }
+        }
+    }
 }
