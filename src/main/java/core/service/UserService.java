@@ -12,35 +12,34 @@ import core.user.NewUser;
 import core.user.Position;
 import core.repository.UserRepository;
 
+import core.store.UserStore;
+
 @Service
 public class UserService {
     private final UserRepository repository;
+    private final UserStore userStore;
 
-    public UserService(UserRepository repository) {
+    public UserService(UserRepository repository, UserStore userStore) {
         this.repository = repository;
+        this.userStore = userStore;
     }
 
     public void saveAll(Collection<User> users) {
         if (users != null) {
             for (User user : users) {
-                validateUser(user);
+                user.validate();
+                userStore.put(user);
             }
         }
-        repository.saveAll(users);
+        repository.saveAll(userStore.getAll());
     }
 
     public Collection<User> loadAll() {
-        Collection<User> users = repository.loadAll();
-        if (users != null) {
-            for (User user : users) {
-                validateUser(user);
-            }
-        }
-        return users;
+        return userStore.getAll();
     }
 
     public boolean addUser(NewUser newUser) {
-        Collection<User> storedUsers = loadAll();
+        Collection<User> storedUsers = userStore.getAll();
 
         boolean exists = storedUsers.stream()
                 .anyMatch(u -> u.getUserId().equalsIgnoreCase(newUser.getUserId()));
@@ -50,9 +49,9 @@ public class UserService {
         }
 
         User user = new User(newUser.getUserId());
-        storedUsers.add(user);
+        userStore.put(user);
 
-        saveAll(storedUsers);
+        saveAll(userStore.getAll());
         return true;
     }
 
@@ -64,47 +63,13 @@ public class UserService {
         return response;
     }
 
-    private void validateUser(User user) {
-        if (user == null) {
-            throw new IllegalArgumentException("User cannot be null");
-        }
+    public void saveUser(User user) {
+        user.validate();
+        userStore.put(user);
+        saveAll(userStore.getAll());
+    }
 
-        // Validate userId is present
-        if (user.getUserId() == null || user.getUserId().trim().isEmpty()) {
-            throw new IllegalStateException("User userId cannot be null or empty");
-        }
-
-        // Validate balance is not null
-        if (user.getBalance() == null) {
-            throw new IllegalStateException("User balance cannot be null for user: " + user.getUserId());
-        }
-
-        // Validate positions map structure: marketId -> Position
-        Map<String, Position> positions = user.getPositions();
-        if (positions != null) {
-            for (Map.Entry<String, Position> entry : positions.entrySet()) {
-                String marketId = entry.getKey();
-                Position position = entry.getValue();
-
-                // Validate marketId is not null or empty
-                if (marketId == null || marketId.trim().isEmpty()) {
-                    throw new IllegalStateException(
-                            "Position marketId cannot be null or empty for user: " + user.getUserId());
-                }
-
-                // Validate position is not null
-                if (position == null) {
-                    throw new IllegalStateException(
-                            "Position cannot be null for marketId: " + marketId + " in user: " + user.getUserId());
-                }
-
-                // Validate that the position's marketId matches the map key
-                if (!marketId.equals(position.getMarketId())) {
-                    throw new IllegalStateException("Position marketId mismatch: map key is " + marketId +
-                            " but position.getMarketId() is " + position.getMarketId() + " for user: "
-                            + user.getUserId());
-                }
-            }
-        }
+    public User getUserById(String userId) {
+        return userStore.get(userId);
     }
 }

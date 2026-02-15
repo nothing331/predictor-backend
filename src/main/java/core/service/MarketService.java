@@ -10,36 +10,44 @@ import core.market.Market;
 import core.market.MarketStatus;
 import core.market.Outcome;
 import core.repository.MarketRepository;
+import core.store.MarketStore;
 
 @Service
 public class MarketService {
     private final MarketRepository repository;
+    private final MarketStore marketStore;
 
-    public MarketService(MarketRepository repository) {
+    public MarketService(MarketRepository repository, MarketStore marketStore) {
         this.repository = repository;
+        this.marketStore = marketStore;
     }
 
     public boolean addMarket(Market market) {
-        validateMarket(market);
-        Collection<Market> markets = loadAll();
+        market.validate();
+        Collection<Market> markets = marketStore.getAll();
         for (Market m : markets) {
             if (m.getMarketId().equals(market.getMarketId()) ||
                     m.getMarketName().equalsIgnoreCase(market.getMarketName())) {
                 return false;
             }
         }
-        markets.add(market);
-        saveAll(markets);
+        marketStore.put(market);
+        saveAll(marketStore.getAll());
         return true;
     }
 
     public Collection<GetAllMarket> getAll(String query) {
-        Collection<Market> markets = new ArrayList<>();
+        Collection<Market> markets;
         if (query == null || query.isEmpty()) {
-            markets = loadAll();
+            markets = marketStore.getAll();
         } else {
-            markets = repository.loadByStatus(query);
-
+            if ("OPEN".equalsIgnoreCase(query) || "RESOLVED".equalsIgnoreCase(query)) {
+                markets = marketStore.getAll().stream()
+                        .filter(m -> m.getStatus().toString().equalsIgnoreCase(query))
+                        .toList();
+            } else {
+                markets = new ArrayList<>();
+            }
         }
         Collection<GetAllMarket> getAllMarkets = new ArrayList<>();
         for (Market market : markets) {
@@ -50,7 +58,7 @@ public class MarketService {
     }
 
     public GetAllMarket getMarketById(String marketId) {
-        Market market = repository.loadById(marketId);
+        Market market = marketStore.get(marketId);
         if (market == null) {
             return null;
         }
@@ -66,59 +74,27 @@ public class MarketService {
             throw new IllegalArgumentException("Invalid outcome: " + outcomeId);
         }
 
-        Collection<Market> markets = loadAll();
-        Market market = markets.stream()
-                .filter(m -> m.getMarketId().equals(marketId))
-                .findFirst()
-                .orElse(null);
+        Market market = marketStore.get(marketId);
 
         if (market == null) {
             throw new IllegalArgumentException("Market not found: " + marketId);
         }
 
         market.resolveMarket(outcome);
-        repository.saveAll(markets);
+        saveAll(marketStore.getAll());
     }
 
     public void saveAll(Collection<Market> markets) {
         if (markets != null) {
             for (Market market : markets) {
-                validateMarket(market);
+                market.validate();
+                marketStore.put(market);
             }
         }
-        repository.saveAll(markets);
+        repository.saveAll(marketStore.getAll());
     }
 
     public Collection<Market> loadAll() {
-        Collection<Market> markets = repository.loadAll();
-        if (markets != null) {
-            for (Market market : markets) {
-                validateMarket(market);
-            }
-        }
-        return markets;
-    }
-
-    private void validateMarket(Market market) {
-        if (market == null) {
-            throw new IllegalArgumentException("Market cannot be null");
-        }
-        if (market.getStatus() == null) {
-            throw new IllegalStateException("Market status cannot be null for market: " + market.getMarketId());
-        }
-        // Liquidity check (b > 0 usually, but let's just check it's not NaN or
-        // infinite)
-        if (Double.isNaN(market.getLiquidity()) || Double.isInfinite(market.getLiquidity())
-                || market.getLiquidity() <= 0) {
-            throw new IllegalStateException("Invalid liquidity for market: " + market.getMarketId());
-        }
-
-        // Outcome resolution check
-        if (market.getStatus() == MarketStatus.RESOLVED && market.getResolvedOutcome() == null) {
-            throw new IllegalStateException("Resolved market must have a resolved outcome: " + market.getMarketId());
-        }
-        if (market.getStatus() == MarketStatus.OPEN && market.getResolvedOutcome() != null) {
-            throw new IllegalStateException("Open market cannot have a resolved outcome: " + market.getMarketId());
-        }
+        return marketStore.getAll();
     }
 }

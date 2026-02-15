@@ -5,15 +5,34 @@ import java.util.Collection;
 
 import org.springframework.stereotype.Service;
 
+import api.dto.BuyRequest;
 import core.trade.Trade;
+import core.trade.TradeEngine;
+import core.user.User;
+import core.lmsr.PricingEngine;
+import core.market.Market;
+import core.market.Outcome;
+import core.repository.MarketRepository;
 import core.repository.TradeRepository;
+import core.service.UserService;
+
+import core.store.MarketStore;
 
 @Service
 public class TradeService {
     private final TradeRepository repository;
+    private final UserService userService;
+    private final MarketRepository marketRepository;
+    private final TradeEngine tradeEngine;
+    private final MarketStore marketStore;
 
-    public TradeService(TradeRepository repository) {
+    public TradeService(TradeRepository repository, UserService userService, MarketRepository marketRepository,
+            TradeEngine tradeEngine, MarketStore marketStore) {
         this.repository = repository;
+        this.userService = userService;
+        this.marketRepository = marketRepository;
+        this.tradeEngine = tradeEngine;
+        this.marketStore = marketStore;
     }
 
     public void saveAll(Collection<Trade> trades) {
@@ -33,6 +52,45 @@ public class TradeService {
             }
         }
         return trades;
+    }
+
+    public void buy(BuyRequest request, String userId, String marketId) {
+        User user = userService.getUserById(userId);
+        Market market = marketStore.get(marketId);
+
+        if (market == null) {
+            throw new IllegalArgumentException("Market not found: " + marketId);
+        }
+        if (user == null) {
+            throw new IllegalArgumentException("User not found: " + userId);
+        }
+
+        Outcome outcome;
+        try {
+            outcome = Outcome.valueOf(request.getOutcome().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid outcome: " + request.getOutcome());
+        }
+
+        // Calculate how many shares can be bought for the given amount (budget)
+        double sharesToBuy = PricingEngine.sharesForAmount(
+                request.getAmount(),
+                market.getQYes(),
+                market.getQNo(),
+                market.getLiquidity(),
+                outcome == Outcome.YES);
+
+        if (sharesToBuy <= 0) {
+            throw new IllegalArgumentException("Amount " + request.getAmount() + " is too low to buy any shares.");
+        }
+
+        // Execute valid trade
+        Trade trade = tradeEngine.executeTrade(user, market, outcome, sharesToBuy);
+
+        // Persist all changes
+        userService.saveUser(user);
+        marketRepository.saveAll(java.util.Collections.singletonList(market));
+        repository.saveAll(java.util.Collections.singletonList(trade));
     }
 
     private void validateTrade(Trade trade) {
