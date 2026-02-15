@@ -360,11 +360,91 @@ after reload.
 
 ---
 
-# WEEK 5 — API Layer (Spring Boot)
+# ✅ WEEK 5 — API Layer (Spring Boot) (COMPLETED)
 
 **Goal:** Expose functionality safely.
 
 🚨 Controllers must not contain business logic.
+
+✅ **Week 5 is officially complete. All core API endpoints are functional.**
+
+---
+
+## ✅ What Was Implemented
+
+### API Architecture
+
+```
+api/
+ ├─ controller/
+ │   ├─ MarketController      # Market CRUD + resolution
+ │   ├─ UserController        # User management
+ │   └─ TradeController       # Trade execution
+ ├─ dto/
+ │   ├─ CreateMarketRequest   # Market creation payload
+ │   ├─ GetAllMarket          # Market response
+ │   ├─ CreateUserRequest     # User creation payload
+ │   ├─ GetUsersRequest       # User response
+ │   ├─ BuyRequest            # Trade execution payload
+ │   └─ ResolveMarketRequest  # Resolution payload
+ └─ exception/
+     ├─ GlobalExceptionHandler  # Centralized error handling
+     └─ ErrorResponse           # Standard error format
+```
+
+### REST API Endpoints
+
+**Users:**
+- `POST /v1/users/create` - Create a new user
+- `GET /v1/users/` - List all users
+
+**Markets:**
+- `POST /v1/markets/create` - Create a new market
+- `GET /v1/markets/` - List all markets (with optional status filter)
+- `GET /v1/markets/{marketId}` - Get market by ID
+- `POST /v1/markets/{marketId}/resolve` - Resolve a market
+
+**Trades:**
+- `POST /v1/trade/buy` - Execute a trade (budget-based share buying)
+
+---
+
+## Key Technical Decisions
+
+### 1. In-Memory Stores for Performance
+- Added `MarketStore` and `UserStore` with `ConcurrentHashMap`
+- Eliminates disk I/O on every API read
+- Thread-safe for concurrent requests
+- Data loaded once at startup via `@PostConstruct`
+
+### 2. Validation in Domain Models
+- Moved validation logic from services to domain models
+- `Market.validate()` and `User.validate()` methods
+- Follows DDD pattern: entities validate themselves
+
+### 3. Global Exception Handling
+- `GlobalExceptionHandler` with `@RestControllerAdvice`
+- Consistent error responses across all endpoints
+- Proper HTTP status codes (400, 404, 500)
+
+### 4. Thin Controllers
+- Controllers contain ZERO business logic
+- Only delegate to services and handle HTTP concerns
+- Core logic preserved in `TradeEngine`, `SettlementEngine`
+
+---
+
+## Week 5 Exit Criteria
+
+- ✅ Spring Boot application running on port 8080
+- ✅ RESTful API exposes all core functionality
+- ✅ Controllers contain no business logic
+- ✅ Validation on DTOs with proper error messages
+- ✅ Thread-safe concurrent access via in-memory stores
+- ✅ Exception handling provides clean error responses
+- ✅ All existing tests pass with new architecture
+
+✅ **Week 5 is officially complete. Proceed to Week 6.**
 
 ---
 
