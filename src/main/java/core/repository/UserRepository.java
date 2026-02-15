@@ -23,4 +23,8 @@ public class UserRepository {
     public Collection<User> loadAll() {
         return fileUserRepository.loadAllFromJson();
     }
+
+    public User loadById(String userId) {
+        return fileUserRepository.loadByIdFromJson(userId);
+    }
 }

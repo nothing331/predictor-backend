@@ -67,4 +67,25 @@ public class FileUserRepository {
             throw new RuntimeException("Failed to load users from JSON", e);
         }
     }
+
+    public User loadByIdFromJson(String userId) {
+        File dataFile = new File(DATA_FILE_PATH);
+        if (!dataFile.exists()) {
+            return null;
+        }
+
+        try {
+            // 1. Read & Parse
+            List<User> users = mapper.readValue(dataFile,
+                    mapper.getTypeFactory().constructCollectionType(List.class, User.class));
+
+            return users.stream()
+                    .filter(user -> user.getUserId().equals(userId))
+                    .findFirst()
+                    .orElse(null);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load users from JSON", e);
+        }
+    }
 }
