@@ -1,10 +1,12 @@
 package core.service;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
+import api.dto.GetUsersRequest;
 import core.user.User;
 import core.user.NewUser;
 import core.user.Position;
@@ -52,6 +54,14 @@ public class UserService {
 
         saveAll(storedUsers);
         return true;
+    }
+
+    public List<GetUsersRequest> getAllUsers() {
+        Collection<User> users = loadAll();
+        List<GetUsersRequest> response = users.stream()
+                .map(user -> new GetUsersRequest(user.getUserId()))
+                .toList();
+        return response;
     }
 
     private void validateUser(User user) {

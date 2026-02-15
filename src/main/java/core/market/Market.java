@@ -17,12 +17,16 @@ public class Market {
     private Outcome resolvedOutcome;
 
     public Market(String marketId, String marketName, String marketDescription) {
+        this(marketId, marketName, marketDescription, 100.0);
+    }
+
+    public Market(String marketId, String marketName, String marketDescription, double liquidity) {
         this.marketId = marketId;
         this.marketName = marketName;
         this.marketDescription = marketDescription;
         this.qYes = 0.0;
         this.qNo = 0.0;
-        this.liquidity = 100.0;
+        this.liquidity = liquidity;
         this.status = MarketStatus.OPEN;
         this.resolvedOutcome = null;
     }
@@ -43,6 +47,14 @@ public class Market {
 
     public String getMarketId() {
         return this.marketId;
+    }
+
+    public String getMarketName() {
+        return this.marketName;
+    }
+
+    public String getMarketDescription() {
+        return this.marketDescription;
     }
 
     public double getQYes() {

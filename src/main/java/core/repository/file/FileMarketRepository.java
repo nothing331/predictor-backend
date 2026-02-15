@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -63,6 +64,47 @@ public class FileMarketRepository {
                     mapper.getTypeFactory().constructCollectionType(List.class, Market.class));
 
             return markets != null ? markets : new ArrayList<>();
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load markets from JSON", e);
+        }
+    }
+
+    public Market loadByIdFromJson(String marketId) {
+        File dataFile = new File(DATA_FILE_PATH);
+        if (!dataFile.exists()) {
+            return null;
+        }
+
+        try {
+            // 1. Read & Parse
+            List<Market> markets = mapper.readValue(dataFile,
+                    mapper.getTypeFactory().constructCollectionType(List.class, Market.class));
+
+            return markets != null
+                    ? markets.stream().filter(m -> m.getMarketId().equals(marketId)).findFirst().orElse(null)
+                    : null;
+
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load markets from JSON", e);
+        }
+    }
+
+    public Collection<Market> loadByStatusFromJson(String status) {
+        File dataFile = new File(DATA_FILE_PATH);
+        if (!dataFile.exists()) {
+            return new ArrayList<>();
+        }
+
+        try {
+            // 1. Read & Parse
+            List<Market> markets = mapper.readValue(dataFile,
+                    mapper.getTypeFactory().constructCollectionType(List.class, Market.class));
+
+            return markets != null
+                    ? markets.stream().filter(m -> m.getStatus().name().equalsIgnoreCase(status))
+                            .collect(Collectors.toList())
+                    : new ArrayList<>();
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to load markets from JSON", e);
