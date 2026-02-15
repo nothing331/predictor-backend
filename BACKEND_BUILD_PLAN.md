@@ -191,24 +191,172 @@ If any step fails → **entire trade fails**.
 
 ---
 
-# WEEK 3 — Market Resolution & Payouts
+# ✅ WEEK 3 — Market Resolution & Payouts (COMPLETED)
 
 **Goal:** Finish the market lifecycle.
 
+✅ Completed outcomes:
 - Resolve only OPEN markets
 - Resolution is final and irreversible
 - Winning shares pay out 1 unit currency
 - Losing shares pay out 0
 
+**Exit Criteria Met:**
+- Settlement engine implemented and tested
+- Deterministic payouts with full edge‑case coverage
+- No trades or state mutation after resolution
+- Positions cleared and protected against double settlement
+
+✅ **Week 3 is officially complete. Proceed to Week 4.**
+
 ---
 
-# WEEK 4 — Persistence Layer
+# ✅ WEEK 4 — Persistence Layer (COMPLETED)
 
 **Goal:** Survive server restarts.
 
-- Persist users, markets, positions, trades
-- Load state on startup
-- Persist after every trade and resolution
+This week is about making the Week 1–3 engine restart‑safe. The rules do not
+change; you are only adding storage for the existing state.
+
+**What to achieve by the end of Week 4:**
+- Stop losing state when the JVM exits
+- Load the exact same markets, users, balances, and positions on startup
+- Persist every successful trade and resolution immediately
+- Fail fast if persisted data is missing or corrupt
+
+---
+
+## Step 1 — Define the persisted state (explicitly)
+
+**Purpose:** Make sure you save only the minimal state required to fully restore
+the system. Persist state, not derived values.
+
+**How to do it:**
+- List the exact fields per domain object and lock them.
+- Avoid storing anything that can be derived (like prices).
+
+**Files to update or add:**
+- `BACKEND_BUILD_PLAN.md` (this section)
+- `core/user/User.java`
+- `core/user/Position.java`
+- `core/market/Market.java`
+- `core/trade/Trade.java`
+
+**Persisted fields (minimum required):**
+- User: `userId`, `balance`, positions per market (YES/NO shares)
+- Market: `marketId`, `qYes`, `qNo`, `b`, `status`, `resolvedOutcome`
+- Trade: `tradeId`, `userId`, `marketId`, `outcome`, `shares`, `cost`, `timestamp`
+
+---
+
+## Step 2 — Create persistence interfaces (ports)
+
+**Purpose:** Keep persistence separate from business logic so Week 5 APIs can
+re-use the same core logic without changes.
+
+**How to do it:**
+- Define simple repository interfaces for users, markets, and trades.
+- Use “save all” and “load all” methods first (simple and reliable).
+
+**Files to add:**
+- `persistence/UserRepository.java`
+- `persistence/MarketRepository.java`
+- `persistence/TradeRepository.java`
+
+**Methods to include:**
+- `saveAll(Collection<T> items)`
+- `loadAll()`
+
+---
+
+## Step 3 — Implement file-based repositories
+
+**Purpose:** Provide a working persistence layer without introducing a database
+yet. This is the simplest reliable storage for Week 4.
+
+**How to do it:**
+- Store each domain collection in a JSON file.
+- Write atomically: write to temp file, then rename.
+- On load, fail fast if a file is missing or invalid.
+
+**Files to add:**
+- `persistence/file/FileUserRepository.java`
+- `persistence/file/FileMarketRepository.java`
+- `persistence/file/FileTradeRepository.java`
+
+**Data files (runtime):**
+- `data/users.json`
+- `data/markets.json`
+- `data/trades.json`
+
+---
+
+## Step 4 — Add a persistence service (or coordinator)
+
+**Purpose:** Centralize all save/load operations so the core engine calls one
+place after every state change.
+
+**How to do it:**
+- Create a small coordinator that loads on startup and saves after mutations.
+- Keep it thin; no business rules here.
+
+**Files to add:**
+- `persistence/PersistenceService.java`
+
+---
+
+## Step 5 — Load state at startup
+
+**Purpose:** Restore the in‑memory engine to its last known state.
+
+**How to do it:**
+- On startup, load markets, users, and trades from disk.
+- Rebuild in-memory maps from loaded objects.
+- Validate references (e.g., positions reference existing markets).
+
+**Files to update or add:**
+- `PredictionMarketGame.java` (or your main bootstrap)
+- `core/` engine wiring code where maps are built
+
+---
+
+## Step 6 — Persist after every trade and resolution
+
+**Purpose:** Never lose a successful state mutation.
+
+**How to do it:**
+- After a successful trade, persist users, markets, and trades.
+- After resolving a market, persist users and markets.
+- Never persist on failed trades.
+
+**Files to update:**
+- `core/trade/TradeEngine.java`
+- `core/market/Market.java` or `core/market/SettlementEngine.java` (if separate)
+
+---
+
+## Step 7 — Add persistence tests
+
+**Purpose:** Prove that state survives a restart and that data is identical
+after reload.
+
+**How to do it:**
+- Create test data, persist it, clear memory, reload, and compare.
+- Verify resolved markets stay resolved and cannot be traded after reload.
+
+**Files to add:**
+- `src/test/java/persistence/PersistenceTest.java`
+
+---
+
+## Week 4 Exit Criteria
+
+- State survives JVM restart with no data loss
+- Every successful trade and resolution persists immediately
+- Reloaded state is identical to pre‑shutdown state
+- Corrupt or missing data fails fast and stops startup
+
+✅ **Week 4 is officially complete. Proceed to Week 5.**
 
 ---
 
