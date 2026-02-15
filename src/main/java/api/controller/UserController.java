@@ -1,6 +1,5 @@
 package api.controller;
 
-import java.util.Collection;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import api.dto.CreateUserRequest;
 import api.dto.GetUsersRequest;
 import core.service.UserService;
-import core.user.User;
 import jakarta.validation.Valid;
 
 @RestController
@@ -24,7 +22,7 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<String> createUser(@Valid @RequestBody CreateUserRequest request) {
         boolean isCreated = userService.addUser(request.toNewUser());
         if (!isCreated) {
@@ -35,7 +33,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully.");
     }
 
-    @GetMapping("/")
+    @GetMapping
     public ResponseEntity<List<GetUsersRequest>> getAllUsers() {
         List<GetUsersRequest> response = userService.getAllUsers();
         return ResponseEntity.ok(response);

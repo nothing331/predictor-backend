@@ -25,7 +25,7 @@ public class MarketController {
     @Autowired
     private MarketService marketService;
 
-    @PostMapping("/create")
+    @PostMapping
     public ResponseEntity<String> createMarket(@Valid @RequestBody CreateMarketRequest request) {
         boolean isCreated = marketService.addMarket(request.createMarket());
         if (!isCreated) {
@@ -36,7 +36,7 @@ public class MarketController {
         return ResponseEntity.status(HttpStatus.CREATED).body("Market created successfully.");
     }
 
-    @GetMapping("/")
+    @GetMapping
     public ResponseEntity<Collection<GetAllMarket>> getAllMarkets(@RequestParam(required = false) String status) {
         return ResponseEntity.ok(marketService.getAll(status));
     }
@@ -53,12 +53,7 @@ public class MarketController {
     @PostMapping("/{marketId}/resolve")
     public ResponseEntity<String> resolveMarket(@PathVariable String marketId,
             @RequestBody @Valid ResolveMarketRequest request) {
-        try {
-            marketService.resolveMarket(marketId, request.getOutcomeId());
-            return ResponseEntity.ok("Market resolved successfully.");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        }
+        marketService.resolveMarket(marketId, request.getOutcomeId());
+        return ResponseEntity.ok("Market resolved successfully.");
     }
-
 }
