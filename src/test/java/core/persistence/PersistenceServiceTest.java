@@ -39,6 +39,11 @@ import core.service.UserService;
 import core.settlement.SettlementEngine;
 import core.trade.Trade;
 import core.trade.TradeEngine;
+import core.repository.file.FileMarketRepository;
+import core.repository.file.FileTradeRepository;
+import core.repository.file.FileUserRepository;
+import core.store.MarketStore;
+import core.store.UserStore;
 import core.user.Position;
 import core.user.User;
 
@@ -122,13 +127,24 @@ public class PersistenceServiceTest {
      * Creates a fresh PersistenceService wired to use file repositories.
      */
     private PersistenceService createPersistenceService() {
-        MarketRepository marketRepo = new MarketRepository();
-        UserRepository userRepo = new UserRepository();
-        TradeRepository tradeRepo = new TradeRepository();
+        FileMarketRepository fileMarketRepo = new FileMarketRepository();
+        FileUserRepository fileUserRepo = new FileUserRepository();
+        FileTradeRepository fileTradeRepo = new FileTradeRepository();
 
-        MarketService marketService = new MarketService(marketRepo);
-        UserService userService = new UserService(userRepo);
-        TradeService tradeService = new TradeService(tradeRepo);
+        MarketRepository marketRepo = new MarketRepository(fileMarketRepo);
+        UserRepository userRepo = new UserRepository(fileUserRepo);
+        TradeRepository tradeRepo = new TradeRepository(fileTradeRepo);
+
+        MarketStore marketStore = new MarketStore(marketRepo);
+        marketStore.init();
+
+        UserStore userStore = new UserStore(userRepo);
+        userStore.init();
+
+        MarketService marketService = new MarketService(marketRepo, marketStore);
+        UserService userService = new UserService(userRepo, userStore);
+        TradeService tradeService = new TradeService(tradeRepo, userService, marketRepo, new TradeEngine(),
+                marketStore);
 
         return new PersistenceService(marketService, tradeService, userService);
     }
@@ -551,10 +567,9 @@ public class PersistenceServiceTest {
             dataDir.mkdirs();
             Files.writeString(new File(dataDir, "markets.json").toPath(), malformedJson);
 
-            PersistenceService persistenceService = createPersistenceService();
-
-            // ACT & ASSERT: Load should throw
+            // ACT & ASSERT: Load or Init should throw
             assertThrows(IllegalStateException.class, () -> {
+                PersistenceService persistenceService = createPersistenceService();
                 persistenceService.loadAll();
             }, "Should throw when market status is null");
         }
@@ -580,10 +595,9 @@ public class PersistenceServiceTest {
             dataDir.mkdirs();
             Files.writeString(new File(dataDir, "markets.json").toPath(), malformedJson);
 
-            PersistenceService persistenceService = createPersistenceService();
-
             // ACT & ASSERT
             assertThrows(IllegalStateException.class, () -> {
+                PersistenceService persistenceService = createPersistenceService();
                 persistenceService.loadAll();
             }, "Should throw when liquidity <= 0");
         }
@@ -609,10 +623,9 @@ public class PersistenceServiceTest {
             dataDir.mkdirs();
             Files.writeString(new File(dataDir, "markets.json").toPath(), malformedJson);
 
-            PersistenceService persistenceService = createPersistenceService();
-
             // ACT & ASSERT
             assertThrows(Exception.class, () -> {
+                PersistenceService persistenceService = createPersistenceService();
                 persistenceService.loadAll();
             }, "Should throw when liquidity is NaN");
         }
@@ -638,10 +651,9 @@ public class PersistenceServiceTest {
             dataDir.mkdirs();
             Files.writeString(new File(dataDir, "markets.json").toPath(), malformedJson);
 
-            PersistenceService persistenceService = createPersistenceService();
-
             // ACT & ASSERT
             assertThrows(IllegalStateException.class, () -> {
+                PersistenceService persistenceService = createPersistenceService();
                 persistenceService.loadAll();
             }, "Should throw when RESOLVED market has null outcome");
         }
@@ -667,10 +679,9 @@ public class PersistenceServiceTest {
             dataDir.mkdirs();
             Files.writeString(new File(dataDir, "markets.json").toPath(), malformedJson);
 
-            PersistenceService persistenceService = createPersistenceService();
-
             // ACT & ASSERT
             assertThrows(IllegalStateException.class, () -> {
+                PersistenceService persistenceService = createPersistenceService();
                 persistenceService.loadAll();
             }, "Should throw when OPEN market has resolved outcome");
         }
@@ -719,10 +730,9 @@ public class PersistenceServiceTest {
             dataDir.mkdirs();
             Files.writeString(new File(dataDir, "users.json").toPath(), malformedJson);
 
-            PersistenceService persistenceService = createPersistenceService();
-
             // ACT & ASSERT: Exception may be wrapped in RuntimeException
             assertThrows(Exception.class, () -> {
+                PersistenceService persistenceService = createPersistenceService();
                 persistenceService.loadAll();
             }, "Should throw when user balance is null");
         }
@@ -866,11 +876,13 @@ public class PersistenceServiceTest {
             Market market2 = new Market("market-2", "Second", "Second market");
             persistenceService.saveAll(Arrays.asList(market2), new ArrayList<>(), new ArrayList<>());
 
-            // ASSERT: Only new data present
+            // ASSERT: New data present, previous data preserved (Merge behavior)
             PersistenceService.LoadedState state = persistenceService.loadAll();
-            assertEquals(1, state.getMarkets().size(), "Should have exactly 1 market");
-            assertEquals("market-2", state.getMarkets().iterator().next().getMarketId(),
-                    "Should be the second market, not the first");
+            assertEquals(2, state.getMarkets().size(), "Should have exactly 2 markets (Merge behavior)");
+            assertTrue(state.getMarkets().stream().anyMatch(m -> m.getMarketId().equals("market-1")),
+                    "First market should be preserved");
+            assertTrue(state.getMarkets().stream().anyMatch(m -> m.getMarketId().equals("market-2")),
+                    "Second market should be present");
         }
 
         @Test
@@ -900,10 +912,10 @@ public class PersistenceServiceTest {
                     new ArrayList<>(),
                     Arrays.asList(user2));
 
-            // ASSERT: New data is valid and loadable
+            // ASSERT: New data is valid and loadable, previous preserved
             PersistenceService.LoadedState state2 = persistenceService.loadAll();
-            assertEquals(1, state2.getMarkets().size(), "Second save should work");
-            assertEquals("market-new", state2.getMarkets().iterator().next().getMarketId(),
+            assertEquals(2, state2.getMarkets().size(), "Second save should accumulate data");
+            assertTrue(state2.getMarkets().stream().anyMatch(m -> m.getMarketId().equals("market-new")),
                     "New market should be present");
         }
     }

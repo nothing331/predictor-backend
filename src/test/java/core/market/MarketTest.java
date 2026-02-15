@@ -344,14 +344,14 @@ public class MarketTest {
             double beforeYesPrice = market.getYesPrice();
             double beforeNoPrice = market.getNoPrice();
 
-            // Act
-            market.applyTrade(Outcome.YES, 100);
+            // Act & Assert
+            assertThrows(IllegalStateException.class, () -> market.applyTrade(Outcome.YES, 100));
 
-            // Assert
+            // Assert State Unchanged
             assertEquals(beforeYesPrice, market.getYesPrice(), EPSILON,
-                    "YES price should not change after resolution");
+                    "YES price should not change after attempted trade on resolved market");
             assertEquals(beforeNoPrice, market.getNoPrice(), EPSILON,
-                    "NO price should not change after resolution");
+                    "NO price should not change after attempted trade on resolved market");
         }
 
         @Test
@@ -405,7 +405,7 @@ public class MarketTest {
 
             // Act
             market.resolveMarket(Outcome.YES);
-            market.applyTrade(Outcome.NO, 100); // Should be ignored
+            assertThrows(IllegalStateException.class, () -> market.applyTrade(Outcome.NO, 100)); // Should throw
 
             // Assert
             assertEquals(priceBeforeResolve, market.getYesPrice(), EPSILON,
@@ -421,7 +421,7 @@ public class MarketTest {
 
             // Act
             market.resolveMarket(Outcome.NO);
-            market.applyTrade(Outcome.YES, 100); // Should be ignored
+            assertThrows(IllegalStateException.class, () -> market.applyTrade(Outcome.YES, 100)); // Should throw
 
             // Assert
             assertEquals(priceBeforeResolve, market.getNoPrice(), EPSILON,
@@ -441,8 +441,8 @@ public class MarketTest {
                     () -> market.resolveMarket(Outcome.NO),
                     "Re-resolving should throw IllegalStateException");
 
-            // Trying to apply trade after resolution should be ignored
-            market.applyTrade(Outcome.NO, 200);
+            // Trying to apply trade after resolution should throw
+            assertThrows(IllegalStateException.class, () -> market.applyTrade(Outcome.NO, 200));
 
             // Assert - state should not change
             assertEquals(priceAfterFirstResolve, market.getYesPrice(), EPSILON,
