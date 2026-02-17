@@ -14,7 +14,7 @@ public class CreateUserRequest {
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 8, message = "Password must be at least 8 characters")
+    @Size(min = 4, message = "Password must be at least 4 characters")
     private String password;
 
     public void setuserId(String userId) {

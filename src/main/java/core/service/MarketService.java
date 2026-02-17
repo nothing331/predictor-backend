@@ -7,19 +7,25 @@ import org.springframework.stereotype.Service;
 
 import api.dto.GetAllMarket;
 import core.market.Market;
-import core.market.MarketStatus;
 import core.market.Outcome;
 import core.repository.MarketRepository;
+import core.settlement.SettlementEngine;
 import core.store.MarketStore;
+import core.user.User;
 
 @Service
 public class MarketService {
     private final MarketRepository repository;
     private final MarketStore marketStore;
+    private final SettlementEngine settlementEngine;
+    private final UserService userService;
 
-    public MarketService(MarketRepository repository, MarketStore marketStore) {
+    public MarketService(MarketRepository repository, MarketStore marketStore, SettlementEngine settlementEngine,
+            UserService userService) {
         this.repository = repository;
         this.marketStore = marketStore;
+        this.settlementEngine = settlementEngine;
+        this.userService = userService;
     }
 
     public boolean addMarket(Market market) {
@@ -80,7 +86,17 @@ public class MarketService {
             throw new IllegalArgumentException("Market not found: " + marketId);
         }
 
+        // 1. Resolve market first (required by SettlementEngine)
         market.resolveMarket(outcome);
+
+        // 2. Load users and settle
+        Collection<User> users = userService.loadAll();
+        settlementEngine.settleMarket(market, users);
+
+        // 3. Persist state
+        // Persist users (balances updated)
+        userService.saveAll(users);
+        // Persist markets (status updated)
         saveAll(marketStore.getAll());
     }
 
