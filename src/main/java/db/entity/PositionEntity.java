@@ -32,15 +32,20 @@ public class PositionEntity {
     @Column(name = "no_shares")
     private BigDecimal noShares;
 
+    @Column(name = "settled", nullable = false)
+    private boolean settled = false;
+
     protected PositionEntity() {
     }
 
-    public PositionEntity(Long positionId, String userId, String marketId, BigDecimal yesShares, BigDecimal noShares) {
+    public PositionEntity(Long positionId, String userId, String marketId, BigDecimal yesShares, BigDecimal noShares,
+            boolean settled) {
         this.positionId = positionId;
         this.userId = userId;
         this.marketId = marketId;
         this.yesShares = yesShares;
         this.noShares = noShares;
+        this.settled = settled;
     }
 
     // getters and setters
@@ -82,5 +87,13 @@ public class PositionEntity {
 
     public void setNoShares(BigDecimal noShares) {
         this.noShares = noShares;
+    }
+
+    public boolean isSettled() {
+        return settled;
+    }
+
+    public void setSettled(boolean settled) {
+        this.settled = settled;
     }
 }

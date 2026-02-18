@@ -10,7 +10,7 @@ import api.dto.GetUsersRequest;
 import core.user.User;
 import core.user.NewUser;
 import core.user.Position;
-import core.repository.UserRepository;
+import core.repository.port.UserRepository;
 
 import core.store.UserStore;
 

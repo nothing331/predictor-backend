@@ -8,10 +8,11 @@ import org.springframework.stereotype.Service;
 import api.dto.GetAllMarket;
 import core.market.Market;
 import core.market.Outcome;
-import core.repository.MarketRepository;
+import core.repository.port.MarketRepository;
 import core.settlement.SettlementEngine;
 import core.store.MarketStore;
 import core.user.User;
+import jakarta.transaction.Transactional;
 
 @Service
 public class MarketService {
@@ -72,6 +73,7 @@ public class MarketService {
                 market.getMarketDescription(), market.getStatus(), market.getResolvedOutcome());
     }
 
+    @Transactional
     public void resolveMarket(String marketId, String outcomeId) {
         Outcome outcome;
         try {

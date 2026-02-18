@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
 
 import core.market.Market;
-import core.repository.MarketRepository;
+import core.repository.port.MarketRepository;
 
 @Component
 public class MarketStore {

@@ -6,6 +6,7 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 @ComponentScan(basePackages = { "core", "api" })
+@org.springframework.boot.autoconfigure.domain.EntityScan(basePackages = { "core", "db.entity" })
 public class PredictionMarketApplication {
     public static void main(String[] args) {
         SpringApplication.run(PredictionMarketApplication.class, args);

@@ -21,14 +21,19 @@ public final class Trade {
     protected Trade() {
     }
 
-    public Trade(String userId2, String marketId2, Outcome outcome2, double sharesBought2, BigDecimal cost2) {
-        this.userId = userId2;
-        this.marketId = marketId2;
-        this.outcome = outcome2;
-        this.sharesBought = sharesBought2;
-        this.cost = cost2;
-        this.createdAt = Instant.now();
-        this.tradeId = UUID.randomUUID().toString();
+    public Trade(String userId, String marketId, Outcome outcome, double sharesBought, BigDecimal cost) {
+        this(UUID.randomUUID().toString(), userId, marketId, outcome, sharesBought, cost, Instant.now());
+    }
+
+    public Trade(String tradeId, String userId, String marketId, Outcome outcome, double sharesBought, BigDecimal cost,
+            Instant createdAt) {
+        this.tradeId = tradeId;
+        this.userId = userId;
+        this.marketId = marketId;
+        this.outcome = outcome;
+        this.sharesBought = sharesBought;
+        this.cost = cost;
+        this.createdAt = createdAt;
     }
 
     public BigDecimal getCost() {

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 import jakarta.annotation.PostConstruct;
 
 import core.user.User;
-import core.repository.UserRepository;
+import core.repository.port.UserRepository;
 
 @Component
 public class UserStore {

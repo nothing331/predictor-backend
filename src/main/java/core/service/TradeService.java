@@ -9,11 +9,12 @@ import api.dto.BuyRequest;
 import core.trade.Trade;
 import core.trade.TradeEngine;
 import core.user.User;
+import jakarta.transaction.Transactional;
 import core.lmsr.PricingEngine;
 import core.market.Market;
 import core.market.Outcome;
-import core.repository.MarketRepository;
-import core.repository.TradeRepository;
+import core.repository.port.MarketRepository;
+import core.repository.port.TradeRepository;
 import core.service.UserService;
 
 import core.store.MarketStore;
@@ -54,6 +55,7 @@ public class TradeService {
         return trades;
     }
 
+    @Transactional
     public void buy(BuyRequest request, String userId, String marketId) {
         User user = userService.getUserById(userId);
         Market market = marketStore.get(marketId);
