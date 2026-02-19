@@ -125,7 +125,7 @@ public class TradeEngine {
         // Market must be open
         if (market.getStatus() != MarketStatus.OPEN) {
             throw new IllegalStateException("Market is not open for trading: " + market.getMarketId());
-        }
+    
 
         // User must have sufficient balance (using BigDecimal.compareTo)
         if (user.getBalance().compareTo(tradeCost) < 0) {

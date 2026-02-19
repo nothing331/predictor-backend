@@ -29,9 +29,9 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import core.market.Market;
 import core.market.MarketStatus;
 import core.market.Outcome;
-import core.repository.MarketRepository;
-import core.repository.TradeRepository;
-import core.repository.UserRepository;
+import core.repository.port.MarketRepository;
+import core.repository.port.TradeRepository;
+import core.repository.port.UserRepository;
 import core.service.MarketService;
 import core.service.PersistenceService;
 import core.service.TradeService;
@@ -141,8 +141,9 @@ public class PersistenceServiceTest {
         UserStore userStore = new UserStore(userRepo);
         userStore.init();
 
-        MarketService marketService = new MarketService(marketRepo, marketStore);
         UserService userService = new UserService(userRepo, userStore);
+        SettlementEngine settlementEngine = new SettlementEngine();
+        MarketService marketService = new MarketService(marketRepo, marketStore, settlementEngine, userService);
         TradeService tradeService = new TradeService(tradeRepo, userService, marketRepo, new TradeEngine(),
                 marketStore);
 
