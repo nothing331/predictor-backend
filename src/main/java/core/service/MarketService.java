@@ -5,7 +5,11 @@ import java.util.Collection;
 
 import org.springframework.stereotype.Service;
 
+import org.springframework.context.ApplicationEventPublisher;
+
 import api.dto.GetAllMarket;
+import core.event.MarketCreatedEvent;
+import core.event.MarketResolvedEvent;
 import core.market.Market;
 import core.market.Outcome;
 import core.repository.port.MarketRepository;
@@ -20,13 +24,15 @@ public class MarketService {
     private final MarketStore marketStore;
     private final SettlementEngine settlementEngine;
     private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public MarketService(MarketRepository repository, MarketStore marketStore, SettlementEngine settlementEngine,
-            UserService userService) {
+            UserService userService, ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.marketStore = marketStore;
         this.settlementEngine = settlementEngine;
         this.userService = userService;
+        this.eventPublisher = eventPublisher;
     }
 
     public boolean addMarket(Market market) {
@@ -40,6 +46,9 @@ public class MarketService {
         }
         marketStore.put(market);
         saveAll(marketStore.getAll());
+
+        eventPublisher.publishEvent(new MarketCreatedEvent(market.getMarketId(), market.getMarketName()));
+
         return true;
     }
 
@@ -100,6 +109,9 @@ public class MarketService {
         userService.saveAll(users);
         // Persist markets (status updated)
         saveAll(marketStore.getAll());
+
+        // 4. Publish Event
+        eventPublisher.publishEvent(new MarketResolvedEvent(market.getMarketId(), outcomeId));
     }
 
     public void saveAll(Collection<Market> markets) {

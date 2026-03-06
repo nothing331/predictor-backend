@@ -17,7 +17,7 @@ import org.mockito.MockitoAnnotations;
 import core.market.Market;
 import core.market.MarketStatus;
 import core.market.Outcome;
-import core.repository.MarketRepository;
+import core.repository.port.MarketRepository;
 import core.settlement.SettlementEngine;
 import core.store.MarketStore;
 import core.user.User;
@@ -32,13 +32,15 @@ public class MarketServiceTest {
     private SettlementEngine settlementEngine;
     @Mock
     private UserService userService;
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     private MarketService marketService;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        marketService = new MarketService(repository, marketStore, settlementEngine, userService);
+        marketService = new MarketService(repository, marketStore, settlementEngine, userService, eventPublisher);
     }
 
     @Test

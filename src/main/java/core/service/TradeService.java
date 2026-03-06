@@ -16,8 +16,10 @@ import core.market.Outcome;
 import core.repository.port.MarketRepository;
 import core.repository.port.TradeRepository;
 import core.service.UserService;
-
 import core.store.MarketStore;
+
+import org.springframework.context.ApplicationEventPublisher;
+import core.event.TradeExecutedEvent;
 
 @Service
 public class TradeService {
@@ -26,14 +28,16 @@ public class TradeService {
     private final MarketRepository marketRepository;
     private final TradeEngine tradeEngine;
     private final MarketStore marketStore;
+    private final ApplicationEventPublisher eventPublisher;
 
     public TradeService(TradeRepository repository, UserService userService, MarketRepository marketRepository,
-            TradeEngine tradeEngine, MarketStore marketStore) {
+            TradeEngine tradeEngine, MarketStore marketStore, ApplicationEventPublisher eventPublisher) {
         this.repository = repository;
         this.userService = userService;
         this.marketRepository = marketRepository;
         this.tradeEngine = tradeEngine;
         this.marketStore = marketStore;
+        this.eventPublisher = eventPublisher;
     }
 
     public void saveAll(Collection<Trade> trades) {
@@ -93,6 +97,15 @@ public class TradeService {
         userService.saveUser(user);
         marketRepository.saveAll(java.util.Collections.singletonList(market));
         repository.saveAll(java.util.Collections.singletonList(trade));
+
+        // Publish event
+        eventPublisher.publishEvent(new TradeExecutedEvent(
+                trade.getTradeId(),
+                trade.getMarketId(),
+                trade.getUserId(),
+                trade.getOutcome().toString(),
+                trade.getShareCount(),
+                trade.getCost()));
     }
 
     private void validateTrade(Trade trade) {

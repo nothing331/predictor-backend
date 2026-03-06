@@ -42,6 +42,9 @@ import core.trade.TradeEngine;
 import core.repository.file.FileMarketRepository;
 import core.repository.file.FileTradeRepository;
 import core.repository.file.FileUserRepository;
+import core.repository.adapter.json.MarketJsonAdapter;
+import core.repository.adapter.json.UserJsonAdapter;
+import core.repository.adapter.json.TradeJsonAdapter;
 import core.store.MarketStore;
 import core.store.UserStore;
 import core.user.Position;
@@ -131,9 +134,9 @@ public class PersistenceServiceTest {
         FileUserRepository fileUserRepo = new FileUserRepository();
         FileTradeRepository fileTradeRepo = new FileTradeRepository();
 
-        MarketRepository marketRepo = new MarketRepository(fileMarketRepo);
-        UserRepository userRepo = new UserRepository(fileUserRepo);
-        TradeRepository tradeRepo = new TradeRepository(fileTradeRepo);
+        MarketRepository marketRepo = new MarketJsonAdapter(fileMarketRepo);
+        UserRepository userRepo = new UserJsonAdapter(fileUserRepo);
+        TradeRepository tradeRepo = new TradeJsonAdapter(fileTradeRepo);
 
         MarketStore marketStore = new MarketStore(marketRepo);
         marketStore.init();
@@ -143,9 +146,10 @@ public class PersistenceServiceTest {
 
         UserService userService = new UserService(userRepo, userStore);
         SettlementEngine settlementEngine = new SettlementEngine();
-        MarketService marketService = new MarketService(marketRepo, marketStore, settlementEngine, userService);
+        MarketService marketService = new MarketService(marketRepo, marketStore, settlementEngine, userService,
+                org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class));
         TradeService tradeService = new TradeService(tradeRepo, userService, marketRepo, new TradeEngine(),
-                marketStore);
+                marketStore, org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class));
 
         return new PersistenceService(marketService, tradeService, userService);
     }
