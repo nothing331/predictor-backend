@@ -1,5 +1,7 @@
 package core.event;
 
+import java.util.Map;
+
 public interface DomainEvent {
-    String getEventType();
+    Map<String, Object> getEvent();
 }
