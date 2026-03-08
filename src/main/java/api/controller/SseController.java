@@ -9,16 +9,20 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import core.event.DomainEvent;
+import core.ratelimit.RateLimiterService;
 import sse.SseManager;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/v1/stream")
 public class SseController {
 
     private final SseManager sseManager;
+    private final RateLimiterService rateLimiterService;
 
-    public SseController(SseManager sseManager) {
+    public SseController(SseManager sseManager, RateLimiterService rateLimiterService) {
         this.sseManager = sseManager;
+        this.rateLimiterService = rateLimiterService;
     }
 
     /**
@@ -26,8 +30,20 @@ public class SseController {
      * On reconnect, client calls REST snapshot endpoints first, then opens stream.
      */
     @GetMapping(path = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(@RequestParam(required = false) String marketId) {
+    public SseEmitter stream(@RequestParam(required = false) String marketId,
+            @org.springframework.web.bind.annotation.RequestHeader(required = false, value = "userId") String userId,
+            HttpServletRequest request) {
+        String ip = getClientIp(request);
+        rateLimiterService.guardSseConnect(userId, ip);
         return sseManager.addClient(marketId);
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String xfHeader = request.getHeader("X-Forwarded-For");
+        if (xfHeader == null || xfHeader.isEmpty()) {
+            return request.getRemoteAddr();
+        }
+        return xfHeader.split(",")[0].trim();
     }
 
     @EventListener
