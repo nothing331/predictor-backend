@@ -13,7 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import core.market.Outcome;
-
+//asasa
 @Entity
 @Table(name = "trades", schema = "market")
 public class TradeEntity {
