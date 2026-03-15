@@ -35,6 +35,13 @@ public class SecurityConfig {
                 // Everything else requires a valid access token
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(eh -> eh
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(401);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"status\":401,\"error\":\"Unauthorized\"}");
+                })
+            )
             .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

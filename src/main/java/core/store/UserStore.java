@@ -41,4 +41,8 @@ public class UserStore {
     public Collection<User> getAll() {
         return users.values();
     }
+
+    public void clear() {
+        users.clear();
+    }
 }

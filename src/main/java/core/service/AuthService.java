@@ -8,10 +8,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
-
-import java.util.Collections;
 
 import api.dto.auth.AuthUserResponse;
 import api.dto.auth.TokenResponse;
@@ -24,6 +20,7 @@ public class AuthService {
     @Autowired private UserService userService;
     @Autowired private JwtService jwtService;
     @Autowired private RefreshTokenService refreshTokenService;
+    @Autowired private GoogleIdTokenVerifier googleIdTokenVerifier;
 
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String clientId;
@@ -33,14 +30,9 @@ public class AuthService {
     
     
     public TokenResponse loginWithGoogle(String idToken) { 
-        GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
-                new NetHttpTransport(), GsonFactory.getDefaultInstance())
-            .setAudience(Collections.singletonList(clientId))
-            .build();
-
         GoogleIdToken googleToken;
         try {
-            googleToken = verifier.verify(idToken);
+            googleToken = googleIdTokenVerifier.verify(idToken);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid Google token");
         }

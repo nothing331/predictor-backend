@@ -1,6 +1,74 @@
 # API Documentation
 
-This document outlines the API endpoints for the Predictor Backend service.
+This document outlines the API endpoints for the Predictor Backend service. 
+
+## Authentication
+
+Most endpoints require a valid JWT. To obtain one, use the Google Auth endpoint.
+
+- **Header:** `Authorization: Bearer <your_jwt_token>`
+
+## Auth API
+
+### Google Login
+Exchanges a Google ID Token for an application access and refresh token.
+
+- **URL:** `/v1/auth/google`
+- **Method:** `POST`
+- **Request Body:** 
+  ```json
+  {
+    "tokenId": "string"
+  }
+  ```
+- **Response Structure (TokenResponse):**
+  ```json
+  {
+    "accessToken": "string",
+    "refreshToken": "string",
+    "expiresIn": 900
+  }
+  ```
+
+### Refresh Token
+Obtain a new access token using a refresh token.
+
+- **URL:** `/v1/auth/refresh`
+- **Method:** `POST`
+- **Request Body:** 
+  ```json
+  {
+    "refreshToken": "string"
+  }
+  ```
+
+### Logout
+Revokes the provided refresh token.
+
+- **URL:** `/v1/auth/logout`
+- **Method:** `POST`
+- **Request Body:** 
+  ```json
+  {
+    "refreshToken": "string"
+  }
+  ```
+
+### Get Current User Profile
+Retrieves the profile of the currently authenticated user.
+
+- **URL:** `/v1/auth/me`
+- **Method:** `GET`
+- **Response Structure (AuthUserResponse):**
+  ```json
+  {
+    "userId": "string",
+    "email": "string",
+    "displayName": "string",
+    "pictureUrl": "string",
+    "balance": 1000.00
+  }
+  ```
 
 ## Market API
 
@@ -13,16 +81,16 @@ Creates a new prediction market.
 
 | Field | Type | Description | Required | Constraints |
 |---|---|---|---|---|
-| `name` | String | Name of the market | Yes | Cannot be empty |
+| `name` | String | Name of the market | Yes | Unique, Cannot be empty |
 | `description` | String | Description of the market | No | |
 | `liquidity` | Double | Initial liquidity | No | Default: 50.0, Must be > 0 |
 
-**Example Request:**
+**Example Response:**
 ```json
 {
-  "name": "Will it rain tomorrow?",
-  "description": "Prediction market for rain in NYC on 2026-02-17",
-  "liquidity": 100.0
+  "status": "success",
+  "message": "Market created successfully.",
+  "marketId": "uuid-string"
 }
 ```
 
@@ -32,20 +100,18 @@ Retrieves a list of all markets, optionally filtered by status.
 - **URL:** `/v1/markets`
 - **Method:** `GET`
 - **Query Parameters:**
-    - `status` (Optional): Filter markets by status (e.g., OPEN, RESOLVED).
+    - `status` (Optional): Filter markets by status (`OPEN`, `RESOLVED`).
 - **Response Body:** Array of Market objects
 
-**Response Structure (GetAllMarket):**
+**Response Object:**
 ```json
-[
-  {
-    "marketId": "string",
-    "marketName": "string",
-    "marketDescription": "string",
-    "status": "OPEN", // or RESOLVED
-    "resolvedOutcome": "YES" // or NO, null if not resolved
-  }
-]
+{
+  "marketId": "string",
+  "marketName": "string",
+  "marketDescription": "string",
+  "status": "OPEN", 
+  "resolvedOutcome": "YES" // or null
+}
 ```
 
 ### Get Market by ID
@@ -53,92 +119,78 @@ Retrieves details of a specific market.
 
 - **URL:** `/v1/markets/{marketId}`
 - **Method:** `GET`
-- **Path Parameters:**
-    - `marketId`: ID of the market to retrieve.
-- **Response Body:** Market object (same as above)
 
 ### Resolve Market
 Resolves a market with a specific outcome (YES or NO).
 
 - **URL:** `/v1/markets/{marketId}/resolve`
 - **Method:** `POST`
-- **Path Parameters:**
-    - `marketId`: ID of the market to resolve.
-- **Request Body:** JSON
-
-| Field | Type | Description | Required | Constraints |
-|---|---|---|---|---|
-| `outcomeId` | String | The winning outcome ("YES" or "NO") | Yes | Cannot be empty |
-
-**Example Request:**
-```json
-{
-  "outcomeId": "YES"
-}
-```
+- **Request Body:** 
+  ```json
+  {
+    "outcomeId": "YES"
+  }
+  ```
 
 ## Trade API
 
 ### Buy Shares
-Executes a trade to buy shares in a market.
+Executes a trade to buy shares in a market. Requires authentication.
 
 - **URL:** `/v1/markets/{marketId}/trades`
 - **Method:** `POST`
-- **Path Parameters:**
-    - `marketId`: ID of the market to trade in.
-- **Headers:**
-    - `userId` (Required): The ID of the user acting.
-- **Request Body:** JSON
+- **Request Body:** 
 
 | Field | Type | Description | Required | Constraints |
 |---|---|---|---|---|
 | `outcome` | String | Outcome to buy ("YES" or "NO") | Yes | Case-insensitive |
 | `amount` | Double | Investment amount (cost) | Yes | Must be > 0 |
 
-**Example Request:**
+**Example Response:**
 ```json
 {
-  "outcome": "YES",
-  "amount": 10.0
+  "status": "success",
+  "message": "Trade executed successfully.",
+  "tradeId": 123,
+  "sharesBought": 15.4,
+  "cost": 10.0,
+  "outcome": "YES"
 }
 ```
 
 ## User API
 
-### Create User
-Registers a new user.
-
-- **URL:** `/v1/users`
-- **Method:** `POST`
-- **Request Body:** JSON
-
-| Field | Type | Description | Required | Constraints |
-|---|---|---|---|---|
-| `userId` | String | Unique user identifier | Yes | Cannot be empty |
-| `email` | String | User email address | Yes | Valid email format |
-| `password` | String | User password | Yes | Min 8 characters |
-
-**Example Request:**
-```json
-{
-  "userId": "jdoe",
-  "email": "jdoe@example.com",
-  "password": "securepassword123"
-}
-```
-
 ### Get All Users
-Retrieves a list of all registered users (currently returns only IDs).
+Retrieves a list of all registered users (IDs only).
 
 - **URL:** `/v1/users`
 - **Method:** `GET`
-- **Response Body:** Array of User objects.
 
-**Response Structure:**
+## Error Response Format
+
+All error responses (4xx and 5xx) follow a consistent structure.
+
+**Response Structure (ErrorResponse):**
 ```json
-[
-  {
-    "userId": "string"
-  }
-]
+{
+  "timestamp": "2026-03-15T18:44:36",
+  "status": 401,
+  "error": "Unauthorized",
+  "message": "Invalid Google token"
+}
 ```
+
+## Testing
+
+To run the automated tests for the application (including Auth integration tests), use the following Maven command:
+
+```bash
+mvn test
+```
+
+Or, to run a specific test class:
+
+```bash
+mvn test -Dtest=AuthIntegrationTest
+```
+

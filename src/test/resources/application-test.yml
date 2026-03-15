@@ -1,0 +1,57 @@
+spring:
+  config:
+    activate:
+      on-profile: test
+
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password: sa
+    driver-class-name: org.h2.Driver
+    name: prediction_market
+  
+  data:
+    redis:
+      url: redis://localhost:6379 # We might need to mock this or use a dummy
+  
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: "dummy-client-id"
+            client-secret: "dummy-client-secret"
+            scope:
+              - email
+              - profile
+            redirect-uri: "http://localhost:8080/auth/google/callback"
+
+  jpa:
+    hibernate:
+      ddl-auto: none # We use flyway
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+        default_schema: market
+
+  flyway:
+    enabled: true
+    schemas: market
+    default-schema: market
+    create-schemas: true
+    clean-disabled: false
+
+app:
+  jwt-secret: "test_secret_key_which_is_at_least_32_bytes_long"
+  jwt-expiry-ms: 900000 
+  jwt-refresh-expiry-day: 30
+
+ratelimit:
+  window-seconds: 60
+  trade:
+    max: 30
+  sse-connect:
+    max: 20
+  fail-closed: true
