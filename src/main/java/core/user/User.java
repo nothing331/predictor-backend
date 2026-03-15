@@ -10,6 +10,12 @@ public class User {
     public static final BigDecimal DEFAULT_STARTING_BALANCE = new BigDecimal("1000.00");
 
     private String userId;
+    private String email;
+    private String displayName;
+    private String pictureUrl;
+    private String googleSub;
+    private String password;
+    private boolean emailVerified;
     private BigDecimal balance;
     private Map<String, Position> positions;
 
@@ -52,6 +58,54 @@ public class User {
 
     public Map<String, Position> getPositions() {
         return Collections.unmodifiableMap(positions);
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public void setDisplayName(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getPictureUrl() {
+        return pictureUrl;
+    }
+
+    public void setPictureUrl(String pictureUrl) {
+        this.pictureUrl = pictureUrl;
+    }
+
+    public String getGoogleSub() {
+        return googleSub;
+    }
+
+    public void setGoogleSub(String googleSub) {
+        this.googleSub = googleSub;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public Position getPosition(String marketId) {
