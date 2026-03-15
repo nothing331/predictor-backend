@@ -60,7 +60,7 @@ public class TradeService {
     }
 
     @Transactional
-    public void buy(BuyRequest request, String userId, String marketId) {
+    public Trade buy(BuyRequest request, String userId, String marketId) {
         User user = userService.getUserById(userId);
         Market market = marketStore.get(marketId);
 
@@ -106,6 +106,8 @@ public class TradeService {
                 trade.getOutcome().toString(),
                 trade.getShareCount(),
                 trade.getCost()));
+        
+        return trade;
     }
 
     private void validateTrade(Trade trade) {

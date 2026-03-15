@@ -32,7 +32,7 @@ Retrieves a list of all markets, optionally filtered by status.
 - **URL:** `/v1/markets`
 - **Method:** `GET`
 - **Query Parameters:**
-    - `status` (Optional): Filter markets by status (e.g., OPEN, CLOSED).
+    - `status` (Optional): Filter markets by status (e.g., OPEN, RESOLVED).
 - **Response Body:** Array of Market objects
 
 **Response Structure (GetAllMarket):**
@@ -42,7 +42,7 @@ Retrieves a list of all markets, optionally filtered by status.
     "marketId": "string",
     "marketName": "string",
     "marketDescription": "string",
-    "status": "OPEN", // or CLOSED, RESOLVED
+    "status": "OPEN", // or RESOLVED
     "resolvedOutcome": "YES" // or NO, null if not resolved
   }
 ]

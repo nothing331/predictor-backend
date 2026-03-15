@@ -14,7 +14,6 @@ public class User {
     private String displayName;
     private String pictureUrl;
     private String googleSub;
-    private String password;
     private boolean emailVerified;
     private BigDecimal balance;
     private Map<String, Position> positions;
@@ -98,14 +97,6 @@ public class User {
 
     public void setEmailVerified(boolean emailVerified) {
         this.emailVerified = emailVerified;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public Position getPosition(String marketId) {

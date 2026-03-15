@@ -48,7 +48,6 @@ spring:
               - profile
             redirect-uri: "http://localhost:8080/auth/google/callback"
 
-
 app:
   persistence:
     mode: dual

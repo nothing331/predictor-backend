@@ -26,14 +26,21 @@ public class MarketController {
     private MarketService marketService;
 
     @PostMapping
-    public ResponseEntity<String> createMarket(@Valid @RequestBody CreateMarketRequest request) {
-        boolean isCreated = marketService.addMarket(request.createMarket());
+    public ResponseEntity<?> createMarket(@Valid @RequestBody CreateMarketRequest request) {
+        core.market.Market market = request.createMarket();
+        boolean isCreated = marketService.addMarket(market);
         if (!isCreated) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Market with this name already exists.");
+                    .body(java.util.Map.of("error", "Market with this name already exists."));
         }
 
-        return ResponseEntity.status(HttpStatus.CREATED).body("Market created successfully.");
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+            java.util.Map.of(
+                "status", "success",
+                "message", "Market created successfully.",
+                "marketId", market.getMarketId()
+            )
+        );
     }
 
     @GetMapping
@@ -51,9 +58,16 @@ public class MarketController {
     }
 
     @PostMapping("/{marketId}/resolve")
-    public ResponseEntity<String> resolveMarket(@PathVariable String marketId,
+    public ResponseEntity<?> resolveMarket(@PathVariable String marketId,
             @RequestBody @Valid ResolveMarketRequest request) {
         marketService.resolveMarket(marketId, request.getOutcomeId());
-        return ResponseEntity.ok("Market resolved successfully.");
+        return ResponseEntity.ok(
+            java.util.Map.of(
+                "status", "success",
+                "message", "Market resolved successfully.",
+                "marketId", marketId,
+                "resolvedOutcome", request.getOutcomeId()
+            )
+        );
     }
 }

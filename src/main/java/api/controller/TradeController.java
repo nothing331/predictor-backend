@@ -21,11 +21,20 @@ public class TradeController {
     private TradeService tradeService;
 
     @PostMapping("/{marketId}/trades")
-    public ResponseEntity<String> buy(@PathVariable String marketId,
+    public ResponseEntity<?> buy(@PathVariable String marketId,
             java.security.Principal principal,
             @RequestBody @Valid BuyRequest request) {
-        tradeService.buy(request, principal.getName(), marketId);
-        return ResponseEntity.ok("Trade executed successfully.");
+        core.trade.Trade trade = tradeService.buy(request, principal.getName(), marketId);
+        return ResponseEntity.ok(
+            java.util.Map.of(
+                "status", "success",
+                "message", "Trade executed successfully.",
+                "tradeId", trade.getTradeId(),
+                "sharesBought", trade.getShareCount(),
+                "cost", trade.getCost(),
+                "outcome", trade.getOutcome()
+            )
+        );
     }
 
 }

@@ -11,15 +11,28 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "refresh_tokens")
+@Table(name = "refresh_tokens", schema = "market")
 public class RefreshToken {
-    @Id @GeneratedValue
+    @Id 
+    @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
+    @jakarta.persistence.Column(name = "token_id")
     private Long id;
+    
+    @jakarta.persistence.Column(name = "token_hash")
     private String tokenHash;     // store SHA-256 hash, not raw value
+    
     @ManyToOne
+    @jakarta.persistence.JoinColumn(name = "user_id")
     private UserEntity user;
+    
+    @jakarta.persistence.Column(name = "expires_at")
     private Instant expiresAt;
-    private boolean revoked;
+    
+    @jakarta.persistence.Column(name = "revoked_at")
+    private Instant revokedAt;
+    
+    @jakarta.persistence.Column(name = "created_at", insertable = false, updatable = false)
+    private Instant createdAt;
 
     public Long getId() {
         return id;
@@ -53,11 +66,15 @@ public class RefreshToken {
         this.expiresAt = expiresAt;
     }
 
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
     public boolean isRevoked() {
-        return revoked;
+        return revokedAt != null;
     }
 
     public void setRevoked(boolean revoked) {
-        this.revoked = revoked;
+        this.revokedAt = revoked ? Instant.now() : null;
     }
 }

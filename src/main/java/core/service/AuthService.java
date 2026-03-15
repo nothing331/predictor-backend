@@ -25,8 +25,11 @@ public class AuthService {
     @Autowired private JwtService jwtService;
     @Autowired private RefreshTokenService refreshTokenService;
 
-    @Value("${google.client-id}")
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String clientId;
+
+    @Value("${app.jwt-expiry-ms}")
+    private long jwtExpiryMs;
     
     
     public TokenResponse loginWithGoogle(String idToken) { 
@@ -63,7 +66,7 @@ public class AuthService {
         String accessToken  = jwtService.generateAccessToken(user);
         String refreshToken = refreshTokenService.create(user);
 
-        return new TokenResponse(accessToken, refreshToken, 900);
+        return new TokenResponse(accessToken, refreshToken, (int) (jwtExpiryMs / 1000));
      }
 
 
@@ -72,7 +75,7 @@ public class AuthService {
         refreshTokenService.rotate(refreshToken); // invalidate old token
         String accessToken  = jwtService.generateAccessToken(user);
         String newRefresh   = refreshTokenService.create(user);
-        return new TokenResponse(accessToken, newRefresh, 900);
+        return new TokenResponse(accessToken, newRefresh, (int) (jwtExpiryMs / 1000));
     }
 
 

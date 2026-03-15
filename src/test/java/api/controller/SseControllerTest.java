@@ -41,7 +41,7 @@ public class SseControllerTest {
 
         when(sseManager.addClient("testMarket")).thenReturn(mockEmitter);
 
-        SseEmitter result = sseController.stream("testMarket", "user123", request);
+        SseEmitter result = sseController.stream("testMarket", () -> "user123", request);
 
         verify(rateLimiterService).guardSseConnect("user123", "10.0.0.2");
         verify(sseManager).addClient("testMarket");

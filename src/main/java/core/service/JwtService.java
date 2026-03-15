@@ -29,7 +29,7 @@ public class JwtService {
 
     public String generateAccessToken(User user) {
         return Jwts.builder().setSubject(user.getUserId().toString()).claim("email", user.getEmail())
-                .setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + 900000)).signWith(key())
+                .setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + expiryMs)).signWith(key())
                 .compact();
     }
 

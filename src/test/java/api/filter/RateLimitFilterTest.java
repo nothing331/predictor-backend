@@ -17,6 +17,8 @@ import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import core.ratelimit.RateLimitExceededException;
 import core.ratelimit.RateLimiterService;
 import jakarta.servlet.ServletException;
@@ -25,11 +27,13 @@ public class RateLimitFilterTest {
 
     private RateLimiterService rateLimiterService;
     private RateLimitFilter filter;
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     public void setup() {
         rateLimiterService = mock(RateLimiterService.class);
-        filter = new RateLimitFilter(rateLimiterService);
+        objectMapper = new ObjectMapper().findAndRegisterModules();
+        filter = new RateLimitFilter(rateLimiterService, objectMapper);
     }
 
     @Test

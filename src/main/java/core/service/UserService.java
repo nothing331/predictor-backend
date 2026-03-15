@@ -73,9 +73,8 @@ public class UserService {
 
     public User upsertGoogleUser(GoogleProfile profile) {
         Collection<User> storedUsers = userStore.getAll();
-        
         User existingUser = storedUsers.stream()
-                .filter(u -> profile.googleSub().equals(u.getGoogleSub()) || profile.email().equalsIgnoreCase(u.getEmail()))
+                .filter(u -> profile.googleSub().equals(u.getGoogleSub()))
                 .findFirst()
                 .orElse(null);
 

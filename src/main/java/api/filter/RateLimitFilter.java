@@ -5,6 +5,8 @@ import java.io.IOException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import core.ratelimit.RateLimitExceededException;
 import core.ratelimit.RateLimiterService;
 import jakarta.servlet.FilterChain;
@@ -16,9 +18,11 @@ import jakarta.servlet.http.HttpServletResponse;
 public class RateLimitFilter extends OncePerRequestFilter {
 
     private final RateLimiterService rateLimiterService;
+    private final ObjectMapper objectMapper;
 
-    public RateLimitFilter(RateLimiterService rateLimiterService) {
+    public RateLimitFilter(RateLimiterService rateLimiterService, ObjectMapper objectMapper) {
         this.rateLimiterService = rateLimiterService;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -27,7 +31,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
         try {
             if (isProtected(request)) {
-                String userId = request.getHeader("userId");
+                String userId = request.getUserPrincipal() != null ? request.getUserPrincipal().getName() : request.getHeader("userId");
                 String ip = getClientIp(request);
                 rateLimiterService.guard(request, userId, ip);
             }
@@ -35,9 +39,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
         } catch (RateLimitExceededException ex) {
             response.setStatus(429);
             response.setContentType("application/json");
-            String json = String.format("{\"status\": 429, \"error\": \"Too Many Requests\", \"message\": \"%s\"}",
-                    ex.getMessage());
-            response.getWriter().write(json);
+            api.exception.ErrorResponse errorResponse = new api.exception.ErrorResponse(
+                    429,
+                    "Too Many Requests",
+                    ex.getMessage()
+            );
+            response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
         }
     }
 

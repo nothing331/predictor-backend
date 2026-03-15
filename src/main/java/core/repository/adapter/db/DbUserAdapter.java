@@ -104,7 +104,6 @@ public class DbUserAdapter implements UserRepository {
                     existing.setGoogleSub(user.getGoogleSub());
                     existing.setPictureUrl(user.getPictureUrl());
                     existing.setEmailVerified(user.isEmailVerified());
-                    existing.setPassword(user.getPassword());
                     return existing;
                 })
                 .orElseGet(() -> {
@@ -118,7 +117,6 @@ public class DbUserAdapter implements UserRepository {
                     entity.setGoogleSub(user.getGoogleSub());
                     entity.setPictureUrl(user.getPictureUrl());
                     entity.setEmailVerified(user.isEmailVerified());
-                    entity.setPassword(user.getPassword());
                     return entity;
                 });
     }
@@ -130,7 +128,6 @@ public class DbUserAdapter implements UserRepository {
         user.setGoogleSub(entity.getGoogleSub());
         user.setPictureUrl(entity.getPictureUrl());
         user.setEmailVerified(entity.isEmailVerified());
-        user.setPassword(entity.getPassword());
 
         // Hydrate positions
         List<PositionEntity> posEntities = jpaPositionRepository.findByUserId(entity.getUserId());
