@@ -99,22 +99,38 @@ public class DbUserAdapter implements UserRepository {
         return jpaUserRepository.findById(user.getUserId())
                 .map(existing -> {
                     existing.setBalance(user.getBalance());
-                    existing.setUserName(user.getUserId()); // User.java doesn't have name, uses ID? distinct field?
-                    // User domain has userId only. UserEntity has userName.
-                    // Re-check User.java
+                    existing.setUserName(user.getDisplayName());
+                    existing.setEmail(user.getEmail());
+                    existing.setGoogleSub(user.getGoogleSub());
+                    existing.setPictureUrl(user.getPictureUrl());
+                    existing.setEmailVerified(user.isEmailVerified());
+                    existing.setPassword(user.getPassword());
                     return existing;
                 })
-                .orElseGet(() -> new UserEntity(
+                .orElseGet(() -> {
+                    UserEntity entity = new UserEntity(
                         user.getUserId(),
-                        user.getUserId(), // Default name = ID
-                        "unknown@example.com", // Default email
+                        user.getDisplayName(),
+                        user.getEmail(),
                         user.getBalance(),
                         new Timestamp(System.currentTimeMillis()),
-                        new Timestamp(System.currentTimeMillis())));
+                        new Timestamp(System.currentTimeMillis()));
+                    entity.setGoogleSub(user.getGoogleSub());
+                    entity.setPictureUrl(user.getPictureUrl());
+                    entity.setEmailVerified(user.isEmailVerified());
+                    entity.setPassword(user.getPassword());
+                    return entity;
+                });
     }
 
     private User toDomainAndHydrate(UserEntity entity) {
         User user = new User(entity.getUserId(), entity.getBalance());
+        user.setEmail(entity.getEmail());
+        user.setDisplayName(entity.getUserName());
+        user.setGoogleSub(entity.getGoogleSub());
+        user.setPictureUrl(entity.getPictureUrl());
+        user.setEmailVerified(entity.isEmailVerified());
+        user.setPassword(entity.getPassword());
 
         // Hydrate positions
         List<PositionEntity> posEntities = jpaPositionRepository.findByUserId(entity.getUserId());
