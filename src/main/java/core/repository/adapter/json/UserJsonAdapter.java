@@ -31,4 +31,20 @@ public class UserJsonAdapter implements UserRepository {
     public User loadById(String userId) {
         return fileUserRepository.loadByIdFromJson(userId);
     }
+
+    @Override
+    public User loadByEmail(String email) {
+        return fileUserRepository.loadAllFromJson().stream()
+                .filter(u -> email.equals(u.getEmail()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
+    public User loadByUserName(String userName) {
+        return fileUserRepository.loadAllFromJson().stream()
+                .filter(u -> userName.equals(u.getDisplayName()))
+                .findFirst()
+                .orElse(null);
+    }
 }

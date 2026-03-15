@@ -39,6 +39,9 @@ public class UserEntity {
     @Column(name = "email_verified")
     private boolean emailVerified;
 
+    @Column(name = "password_hash")
+    private String passwordHash;
+
     protected UserEntity() {
     }
 
@@ -58,6 +61,8 @@ public class UserEntity {
     public void setPictureUrl(String pictureUrl) { this.pictureUrl = pictureUrl; }
     public boolean isEmailVerified() { return emailVerified; }
     public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+    public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
     // getters and setters
     public String getUserId() {

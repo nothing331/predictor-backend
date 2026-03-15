@@ -9,4 +9,6 @@ public interface UserRepository {
     Collection<User> loadAll();
 
     User loadById(String userId);
+    User loadByEmail(String email);
+    User loadByUserName(String userName);
 }

@@ -38,4 +38,14 @@ public class DualWriteUserAdapter implements UserRepository {
     public User loadById(String userId) {
         return dbAdapter.loadById(userId);
     }
+
+    @Override
+    public User loadByEmail(String email) {
+        return dbAdapter.loadByEmail(email);
+    }
+
+    @Override
+    public User loadByUserName(String userName) {
+        return dbAdapter.loadByUserName(userName);
+    }
 }

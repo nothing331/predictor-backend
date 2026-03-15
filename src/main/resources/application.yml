@@ -51,6 +51,9 @@ spring:
 app:
   persistence:
     mode: dual
+  demo:
+    auth:
+      enabled: false
   jwt-secret: ${JWT_SECRET}
   jwt-expiry-ms: 900000 
   jwt-refresh-expiry-day: 30

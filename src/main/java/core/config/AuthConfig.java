@@ -9,6 +9,11 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.Collections;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Collections;
+
 @Configuration
 public class AuthConfig {
 
@@ -21,5 +26,10 @@ public class AuthConfig {
                 new NetHttpTransport(), GsonFactory.getDefaultInstance())
                 .setAudience(Collections.singletonList(clientId))
                 .build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

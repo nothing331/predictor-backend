@@ -90,6 +90,20 @@ public class DbUserAdapter implements UserRepository {
                 .orElse(null);
     }
 
+    @Override
+    public User loadByEmail(String email) {
+        return jpaUserRepository.findByEmail(email)
+                .map(this::toDomainAndHydrate)
+                .orElse(null);
+    }
+
+    @Override
+    public User loadByUserName(String userName) {
+        return jpaUserRepository.findByUserName(userName)
+                .map(this::toDomainAndHydrate)
+                .orElse(null);
+    }
+
     private UserEntity toEntity(User user) {
         // UserEntity has email, createdAt, updatedAt which are not in User.
         // We might lose data if we don't load first.
@@ -104,6 +118,7 @@ public class DbUserAdapter implements UserRepository {
                     existing.setGoogleSub(user.getGoogleSub());
                     existing.setPictureUrl(user.getPictureUrl());
                     existing.setEmailVerified(user.isEmailVerified());
+                    existing.setPasswordHash(user.getPasswordHash());
                     return existing;
                 })
                 .orElseGet(() -> {
@@ -117,6 +132,7 @@ public class DbUserAdapter implements UserRepository {
                     entity.setGoogleSub(user.getGoogleSub());
                     entity.setPictureUrl(user.getPictureUrl());
                     entity.setEmailVerified(user.isEmailVerified());
+                    entity.setPasswordHash(user.getPasswordHash());
                     return entity;
                 });
     }
@@ -128,6 +144,7 @@ public class DbUserAdapter implements UserRepository {
         user.setGoogleSub(entity.getGoogleSub());
         user.setPictureUrl(entity.getPictureUrl());
         user.setEmailVerified(entity.isEmailVerified());
+        user.setPasswordHash(entity.getPasswordHash());
 
         // Hydrate positions
         List<PositionEntity> posEntities = jpaPositionRepository.findByUserId(entity.getUserId());

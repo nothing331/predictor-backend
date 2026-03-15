@@ -21,6 +21,7 @@ public class AuthService {
     @Autowired private JwtService jwtService;
     @Autowired private RefreshTokenService refreshTokenService;
     @Autowired private GoogleIdTokenVerifier googleIdTokenVerifier;
+    @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String clientId;
@@ -60,6 +61,38 @@ public class AuthService {
 
         return new TokenResponse(accessToken, refreshToken, (int) (jwtExpiryMs / 1000));
      }
+
+    public TokenResponse demoRegister(String username, String password, String email) {
+        if (userService.findByUserName(username) != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already exists");
+        }
+        if (userService.findByEmail(email) != null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email already exists");
+        }
+
+        User newUser = new User(java.util.UUID.randomUUID().toString());
+        newUser.setDisplayName(username);
+        newUser.setEmail(email);
+        newUser.setPasswordHash(passwordEncoder.encode(password));
+        newUser.setEmailVerified(true); // For demo auth, assume verified or just skip it
+
+        userService.addUser(newUser);
+
+        String accessToken  = jwtService.generateAccessToken(newUser);
+        String refreshToken = refreshTokenService.create(newUser);
+        return new TokenResponse(accessToken, refreshToken, (int) (jwtExpiryMs / 1000));
+    }
+
+    public TokenResponse demoLogin(String username, String password) {
+        User user = userService.findByUserName(username);
+        if (user == null || user.getPasswordHash() == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
+        }
+
+        String accessToken  = jwtService.generateAccessToken(user);
+        String refreshToken = refreshTokenService.create(user);
+        return new TokenResponse(accessToken, refreshToken, (int) (jwtExpiryMs / 1000));
+    }
 
 
     public TokenResponse refresh(String refreshToken) {

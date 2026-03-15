@@ -1,0 +1,9 @@
+spring:
+  config:
+    activate:
+      on-profile: demo
+
+app:
+  demo:
+    auth:
+      enabled: true

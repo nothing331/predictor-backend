@@ -71,6 +71,30 @@ public class UserService {
         return userStore.get(userId);
     }
 
+    public User findByEmail(String email) {
+        // First check store (cache)
+        User cached = loadAll().stream()
+                .filter(u -> email.equalsIgnoreCase(u.getEmail()))
+                .findFirst()
+                .orElse(null);
+        if (cached != null) return cached;
+        
+        // Then check repository
+        return repository.loadByEmail(email);
+    }
+
+    public User findByUserName(String userName) {
+        // First check store (cache)
+        User cached = loadAll().stream()
+                .filter(u -> userName.equalsIgnoreCase(u.getDisplayName()))
+                .findFirst()
+                .orElse(null);
+        if (cached != null) return cached;
+
+        // Then check repository
+        return repository.loadByUserName(userName);
+    }
+
     public User upsertGoogleUser(GoogleProfile profile) {
         Collection<User> storedUsers = userStore.getAll();
         User existingUser = storedUsers.stream()

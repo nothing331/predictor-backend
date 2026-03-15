@@ -31,6 +31,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET,  "/v1/stream/events").permitAll()
                 // Auth routes (login + refresh are public, rest protected)
                 .requestMatchers(HttpMethod.POST, "/v1/auth/google").permitAll()
+                .requestMatchers(HttpMethod.POST, "/v1/auth/demo/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/v1/auth/refresh").permitAll()
                 .requestMatchers(HttpMethod.POST, "/v1/auth/logout").permitAll()
                 // Everything else requires a valid access token
