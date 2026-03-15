@@ -448,9 +448,73 @@ api/
 
 ---
 
-# WEEK 6 — WebSockets & Hardening
+# ✅ WEEK 6 — Real-Time Streams & Hardening (COMPLETED)
 
 **Goal:** Real‑time updates and abuse prevention.
+
+✅ **Week 6 is officially complete. SSE streaming and rate-limiting hardening are implemented.**
+
+---
+
+## ✅ What Was Implemented
+
+### Real-Time Streaming (SSE)
+
+- Added SSE endpoint:
+  - `GET /v1/stream/events`
+- Added server-side stream manager:
+  - Tracks active clients
+  - Supports optional `marketId` filtering
+  - Sends heartbeat comments every 15 seconds
+- Added domain event envelope contract:
+  - `eventId`
+  - `type`
+  - `occurredAt`
+  - `marketId`
+  - `payload`
+
+### Domain Events Published from Core Services
+
+- `MarketCreatedEvent`
+- `TradeExecutedEvent`
+- `MarketResolvedEvent`
+- Events are published by core services and broadcast to SSE clients via `@EventListener`.
+
+### Abuse Prevention / Rate Limiting
+
+- Added Redis-backed rate limiter service with atomic Lua check:
+  - `INCR` + `EXPIRE` + threshold check in one script
+- Added configurable limits:
+  - `ratelimit.window-seconds`
+  - `ratelimit.trade.max`
+  - `ratelimit.sse-connect.max`
+  - `ratelimit.fail-closed`
+- Added request filter to guard mutation endpoints under `/v1/markets`.
+- Added SSE connect guard on `/v1/stream/events`.
+- Added `RateLimitExceededException` + global `429 Too Many Requests` handling.
+
+### Observability and Infrastructure
+
+- Added rate-limit counters:
+  - `ratelimit.allowed`
+  - `ratelimit.blocked`
+- Added Redis config in app settings:
+  - `spring.data.redis.url` (`REDIS_URL` env override supported)
+- Added actuator dependency for metrics export.
+
+---
+
+## Week 6 Exit Criteria
+
+- ✅ Clients can subscribe to `GET /v1/stream/events` and receive live domain events
+- ✅ Trade, market create, and market resolve operations emit stream events
+- ✅ Heartbeats keep SSE streams alive
+- ✅ Redis-backed rate limiting is active for protected operations
+- ✅ SSE connect attempts are rate-limited
+- ✅ Rate-limit violations return `429 Too Many Requests`
+- ✅ Build and tests pass with Week 6 architecture
+
+✅ **Week 6 is officially complete.**
 
 ---
 

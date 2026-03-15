@@ -1,6 +1,8 @@
 spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  config:
+    import: optional:file:.env[.properties]
 ---
 # Development Profile (Docker)
 spring:
@@ -13,6 +15,10 @@ spring:
     username: ${POSTGRES_USER:market_user}
     password: ${POSTGRES_PASSWORD:dev_password_123}
     driver-class-name: org.postgresql.Driver
+
+  data:
+    redis:
+      url: ${REDIS_URL}
 
   flyway:
     enabled: true
@@ -30,4 +36,30 @@ spring:
         format_sql: true
         default_schema: market
 
-app.persistence.mode: dual
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+            redirect-uri: "http://localhost:8080/auth/google/callback"
+
+
+app:
+  persistence:
+    mode: dual
+  jwt-secret: ${JWT_SECRET}
+  jwt-expiry-ms: 900000 
+  jwt-refresh-expiry-day: 30
+
+ratelimit:
+  window-seconds: 60
+  trade:
+    max: 30
+  sse-connect:
+    max: 20
+  fail-closed: true
