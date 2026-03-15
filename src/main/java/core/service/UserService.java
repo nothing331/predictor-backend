@@ -8,11 +8,11 @@ import org.springframework.stereotype.Service;
 
 import api.dto.GetUsersRequest;
 import core.user.User;
-import core.user.NewUser;
 import core.user.Position;
 import core.repository.port.UserRepository;
-
 import core.store.UserStore;
+import core.user.User;
+import core.user.GoogleProfile;
 
 @Service
 public class UserService {
@@ -38,21 +38,19 @@ public class UserService {
         return userStore.getAll();
     }
 
-    public boolean addUser(NewUser newUser) {
+    public User addUser(User user) {
         Collection<User> storedUsers = userStore.getAll();
 
         boolean exists = storedUsers.stream()
-                .anyMatch(u -> u.getUserId().equalsIgnoreCase(newUser.getUserId()));
+                .anyMatch(u -> u.getUserId().equalsIgnoreCase(user.getUserId()));
 
         if (exists) {
-            return false;
+            return userStore.get(user.getUserId());
         }
 
-        User user = new User(newUser.getUserId());
         userStore.put(user);
-
         saveAll(userStore.getAll());
-        return true;
+        return user;
     }
 
     public List<GetUsersRequest> getAllUsers() {
@@ -71,5 +69,32 @@ public class UserService {
 
     public User getUserById(String userId) {
         return userStore.get(userId);
+    }
+
+    public User upsertGoogleUser(GoogleProfile profile) {
+        Collection<User> storedUsers = userStore.getAll();
+        
+        User existingUser = storedUsers.stream()
+                .filter(u -> profile.googleSub().equals(u.getGoogleSub()) || profile.email().equalsIgnoreCase(u.getEmail()))
+                .findFirst()
+                .orElse(null);
+
+        if (existingUser != null) {
+            existingUser.setGoogleSub(profile.googleSub());
+            existingUser.setEmail(profile.email());
+            existingUser.setDisplayName(profile.name());
+            existingUser.setPictureUrl(profile.pictureUrl());
+            existingUser.setEmailVerified(profile.emailVerified());
+            saveUser(existingUser);
+            return existingUser;
+        } else {
+            User newUser = new User(profile.googleSub());
+            newUser.setEmail(profile.email());
+            newUser.setDisplayName(profile.name());
+            newUser.setPictureUrl(profile.pictureUrl());
+            newUser.setGoogleSub(profile.googleSub());
+            newUser.setEmailVerified(profile.emailVerified());
+            return addUser(newUser);
+        }
     }
 }
