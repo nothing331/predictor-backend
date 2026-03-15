@@ -8,7 +8,7 @@ spring:
 spring:
   config:
     activate:
-      on-profile: dev
+      on-profile: dev | demo
 
   datasource:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5433}/${POSTGRES_DB:prediction_market}
