@@ -30,6 +30,18 @@ public class UserEntity {
     @Column(name = "updated_at")
     private Timestamp updatedAt;
 
+    @Column(name = "google_sub")
+    private String googleSub;
+
+    @Column(name = "picture_url")
+    private String pictureUrl;
+
+    @Column(name = "email_verified")
+    private boolean emailVerified;
+
+    @Column(name = "password")
+    private String password;
+
     protected UserEntity() {
     }
 
@@ -42,6 +54,15 @@ public class UserEntity {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
+
+    public String getGoogleSub() { return googleSub; }
+    public void setGoogleSub(String googleSub) { this.googleSub = googleSub; }
+    public String getPictureUrl() { return pictureUrl; }
+    public void setPictureUrl(String pictureUrl) { this.pictureUrl = pictureUrl; }
+    public boolean isEmailVerified() { return emailVerified; }
+    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
     // getters and setters
     public String getUserId() {
