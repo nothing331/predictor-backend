@@ -204,7 +204,7 @@ public class AuthIntegrationTest {
         mockMvc.perform(post("/v1/auth/logout")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(logoutBody))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         // Attempt refresh with revoked token -> fail
         mockMvc.perform(post("/v1/auth/refresh")

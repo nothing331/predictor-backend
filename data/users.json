@@ -1,0 +1,110 @@
+[ {
+  "userId" : "Sunishtha",
+  "email" : "unknown@example.com",
+  "displayName" : "Sunishtha",
+  "pictureUrl" : null,
+  "googleSub" : null,
+  "emailVerified" : false,
+  "balance" : 966.97938469,
+  "positions" : {
+    "IPL-20260219-122825" : {
+      "marketId" : "IPL-20260219-122825",
+      "yesShares" : 0.0,
+      "noShares" : 0.0,
+      "settled" : true,
+      "userId" : null
+    },
+    "world-cup-T20-20260308-232031" : {
+      "marketId" : "world-cup-T20-20260308-232031",
+      "yesShares" : 0.0,
+      "noShares" : 0.0,
+      "settled" : true,
+      "userId" : null
+    },
+    "india-score-20260309-001334" : {
+      "marketId" : "india-score-20260309-001334",
+      "yesShares" : 0.0,
+      "noShares" : 0.0,
+      "settled" : true,
+      "userId" : null
+    }
+  }
+}, {
+  "userId" : "Aditya",
+  "email" : "unknown@example.com",
+  "displayName" : "Aditya",
+  "pictureUrl" : null,
+  "googleSub" : null,
+  "emailVerified" : false,
+  "balance" : 485.20828672,
+  "positions" : {
+    "IPL-20260219-122825" : {
+      "marketId" : "IPL-20260219-122825",
+      "yesShares" : 0.0,
+      "noShares" : 0.0,
+      "settled" : true,
+      "userId" : null
+    },
+    "world-cup-T20-20260308-232031" : {
+      "marketId" : "world-cup-T20-20260308-232031",
+      "yesShares" : 0.0,
+      "noShares" : 0.0,
+      "settled" : true,
+      "userId" : null
+    },
+    "india-score-20260309-001334" : {
+      "marketId" : "india-score-20260309-001334",
+      "yesShares" : 0.0,
+      "noShares" : 0.0,
+      "settled" : true,
+      "userId" : null
+    },
+    "Gold-Price-20260218-230948" : {
+      "marketId" : "Gold-Price-20260218-230948",
+      "yesShares" : 0.0,
+      "noShares" : 0.0,
+      "settled" : true,
+      "userId" : null
+    }
+  }
+}, {
+  "userId" : "Ayush",
+  "email" : "unknown@example.com",
+  "displayName" : "Ayush",
+  "pictureUrl" : null,
+  "googleSub" : null,
+  "emailVerified" : false,
+  "balance" : 346.54090032,
+  "positions" : {
+    "world-cup-T20-20260308-232031" : {
+      "marketId" : "world-cup-T20-20260308-232031",
+      "yesShares" : 0.0,
+      "noShares" : 0.0,
+      "settled" : true,
+      "userId" : null
+    },
+    "india-score-20260309-001334" : {
+      "marketId" : "india-score-20260309-001334",
+      "yesShares" : 0.0,
+      "noShares" : 0.0,
+      "settled" : true,
+      "userId" : null
+    },
+    "Gold-Price-20260218-230948" : {
+      "marketId" : "Gold-Price-20260218-230948",
+      "yesShares" : 0.0,
+      "noShares" : 0.0,
+      "settled" : true,
+      "userId" : null
+    }
+  }
+}, {
+  "userId" : "102268630895252200608",
+  "email" : "ayush33156@gmail.com",
+  "displayName" : "Ayush Gupta",
+  "pictureUrl" : "https://lh3.googleusercontent.com/a/ACg8ocJCbbW-cgdZTp2aa2c75BGuQamkPEcD1qrC-_HO6Jziz3NLYA=s96-c",
+  "googleSub" : "102268630895252200608",
+  "emailVerified" : true,
+  "balance" : 1000.00000000,
+  "positions" : { }
+} ]
