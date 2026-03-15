@@ -31,8 +31,9 @@ public class SseController {
      */
     @GetMapping(path = "/events", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(@RequestParam(required = false) String marketId,
-            @org.springframework.web.bind.annotation.RequestHeader(required = false, value = "userId") String userId,
+            java.security.Principal principal,
             HttpServletRequest request) {
+        String userId = principal != null ? principal.getName() : null;
         String ip = getClientIp(request);
         rateLimiterService.guardSseConnect(userId, ip);
         return sseManager.addClient(marketId);

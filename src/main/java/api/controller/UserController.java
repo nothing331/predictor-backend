@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import api.dto.CreateUserRequest;
 import api.dto.GetUsersRequest;
 import core.service.UserService;
 import jakarta.validation.Valid;
@@ -21,17 +20,6 @@ import jakarta.validation.Valid;
 public class UserController {
     @Autowired
     private UserService userService;
-
-    @PostMapping
-    public ResponseEntity<String> createUser(@Valid @RequestBody CreateUserRequest request) {
-        boolean isCreated = userService.addUser(request.toNewUser());
-        if (!isCreated) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("User with this email already exists.");
-        }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully.");
-    }
 
     @GetMapping
     public ResponseEntity<List<GetUsersRequest>> getAllUsers() {

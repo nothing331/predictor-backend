@@ -22,9 +22,9 @@ public class TradeController {
 
     @PostMapping("/{marketId}/trades")
     public ResponseEntity<String> buy(@PathVariable String marketId,
-            @RequestHeader String userId,
+            java.security.Principal principal,
             @RequestBody @Valid BuyRequest request) {
-        tradeService.buy(request, userId, marketId);
+        tradeService.buy(request, principal.getName(), marketId);
         return ResponseEntity.ok("Trade executed successfully.");
     }
 
