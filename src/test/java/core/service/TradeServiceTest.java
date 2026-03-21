@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -21,8 +22,6 @@ import core.repository.port.TradeRepository;
 import core.store.MarketStore;
 import core.trade.Trade;
 import core.trade.TradeEngine;
-import core.user.User;
-import core.service.UserService;
 
 public class TradeServiceTest {
 
@@ -60,7 +59,7 @@ public class TradeServiceTest {
         when(tradeRepository.loadByMarketId(marketId)).thenReturn(expectedTrades);
 
         // Act
-        List<Trade> actualTrades = tradeService.getTradesByMarketId(marketId);
+        Collection<Trade> actualTrades = tradeService.getTradesByMarketId(marketId);
 
         // Assert
         assertEquals(expectedTrades, actualTrades);

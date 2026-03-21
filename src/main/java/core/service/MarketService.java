@@ -47,8 +47,13 @@ public class MarketService {
                 return false;
             }
         }
+        try {
+            repository.saveAll(List.of(market));
+        } catch (Exception e) {
+            throw e;
+        }
+
         marketStore.put(market);
-        saveAll(marketStore.getAll());
 
         eventPublisher.publishEvent(new MarketCreatedEvent(market.getMarketId(), market.getMarketName()));
 

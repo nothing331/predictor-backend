@@ -50,7 +50,7 @@ spring:
 
 app:
   persistence:
-    mode: dual
+    mode: db
   demo:
     auth:
       enabled: false
