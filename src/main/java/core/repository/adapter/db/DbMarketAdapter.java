@@ -1,7 +1,6 @@
 package core.repository.adapter.db;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Repository;
 
 import core.market.Market;
 import core.market.MarketStatus;
-import core.market.Outcome;
 import core.repository.port.MarketRepository;
 import db.entity.MarketEntity;
 
@@ -68,12 +66,12 @@ public class DbMarketAdapter implements MarketRepository {
                 BigDecimal.valueOf(market.getLiquidity()),
                 market.getStatus(),
                 market.getResolvedOutcome(),
-                null, // createdAt
-                null // resolvedAt
+                market.getCategory(),
+                market.getYesLabel(),
+                market.getNoLabel(),
+                null, // createdAt — managed by DB default
+                null  // resolvedAt — managed by DB default
         );
-        // Note: createdAt and resolvedAt are not available in domain Market object
-        // directly in a simple way
-        // without adding fields. Assuming null or handled by DB/Listener for now.
     }
 
     private Market toDomain(MarketEntity entity) {
@@ -116,6 +114,24 @@ public class DbMarketAdapter implements MarketRepository {
             java.lang.reflect.Field resolvedOutcomeField = Market.class.getDeclaredField("resolvedOutcome");
             resolvedOutcomeField.setAccessible(true);
             resolvedOutcomeField.set(market, entity.getResolvedOutcome());
+
+            if (entity.getCategory() != null) {
+                java.lang.reflect.Field categoryField = Market.class.getDeclaredField("category");
+                categoryField.setAccessible(true);
+                categoryField.set(market, entity.getCategory());
+            }
+
+            if (entity.getYesLabel() != null) {
+                java.lang.reflect.Field yesLabelField = Market.class.getDeclaredField("yesLabel");
+                yesLabelField.setAccessible(true);
+                yesLabelField.set(market, entity.getYesLabel());
+            }
+
+            if (entity.getNoLabel() != null) {
+                java.lang.reflect.Field noLabelField = Market.class.getDeclaredField("noLabel");
+                noLabelField.setAccessible(true);
+                noLabelField.set(market, entity.getNoLabel());
+            }
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to map MarketEntity to Market", e);

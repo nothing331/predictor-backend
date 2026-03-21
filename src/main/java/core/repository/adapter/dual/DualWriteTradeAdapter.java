@@ -1,5 +1,6 @@
 package core.repository.adapter.dual;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -32,5 +33,15 @@ public class DualWriteTradeAdapter implements TradeRepository {
     @Override
     public Collection<Trade> loadAll() {
         return dbAdapter.loadAll();
+    }
+
+    @Override
+    public Collection<Trade> loadByMarketId(String marketId) {
+        return dbAdapter.loadByMarketId(marketId);
+    }
+
+    @Override
+    public BigDecimal sumCostByMarketId(String marketId) {
+        return dbAdapter.sumCostByMarketId(marketId);
     }
 }

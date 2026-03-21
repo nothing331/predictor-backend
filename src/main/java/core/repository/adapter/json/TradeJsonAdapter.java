@@ -1,6 +1,8 @@
 package core.repository.adapter.json;
 
+import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Repository;
 
@@ -25,5 +27,20 @@ public class TradeJsonAdapter implements TradeRepository {
     @Override
     public Collection<Trade> loadAll() {
         return fileTradeRepository.loadAllFromJson();
+    }
+
+    @Override
+    public Collection<Trade> loadByMarketId(String marketId) {
+        return fileTradeRepository.loadAllFromJson().stream()
+                .filter(t -> marketId.equals(t.getMarketId()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public BigDecimal sumCostByMarketId(String marketId) {
+        return fileTradeRepository.loadAllFromJson().stream()
+                .filter(t -> marketId.equals(t.getMarketId()))
+                .map(core.trade.Trade::getCost)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

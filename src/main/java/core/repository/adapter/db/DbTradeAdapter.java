@@ -1,5 +1,6 @@
 package core.repository.adapter.db;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;
@@ -33,6 +34,18 @@ public class DbTradeAdapter implements TradeRepository {
         return jpaTradeRepository.findAll().stream()
                 .map(this::toDomain)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<Trade> loadByMarketId(String marketId) {
+        return jpaTradeRepository.findByMarketId(marketId).stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public BigDecimal sumCostByMarketId(String marketId) {
+        return jpaTradeRepository.sumCostByMarketId(marketId);
     }
 
     private TradeEntity toEntity(Trade trade) {
