@@ -146,10 +146,10 @@ public class PersistenceServiceTest {
 
         UserService userService = new UserService(userRepo, userStore);
         SettlementEngine settlementEngine = new SettlementEngine();
-        MarketService marketService = new MarketService(marketRepo, marketStore, settlementEngine, userService,
-                org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class));
         TradeService tradeService = new TradeService(tradeRepo, userService, marketRepo, new TradeEngine(),
                 marketStore, org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class));
+        MarketService marketService = new MarketService(marketRepo, marketStore, settlementEngine, userService,
+                org.mockito.Mockito.mock(org.springframework.context.ApplicationEventPublisher.class), tradeService);
 
         return new PersistenceService(marketService, tradeService, userService);
     }

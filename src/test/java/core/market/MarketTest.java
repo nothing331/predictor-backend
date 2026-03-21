@@ -69,6 +69,43 @@ public class MarketTest {
             assertEquals(0.5, customMarket.getYesPrice(), EPSILON);
             assertEquals(0.5, customMarket.getNoPrice(), EPSILON);
         }
+
+        @Test
+        @DisplayName("4-arg constructor provides null-safe defaults for category and labels")
+        void constructorProvidesNullSafeDefaults() {
+            // Arrange & Act
+            Market defaultMarket = new Market("1", "Name", "Desc", 100.0);
+            Market nullMarket = new Market("2", "Name", "Desc", 100.0, null, null, null);
+            Market blankMarket = new Market("3", "Name", "Desc", 100.0, "", "   ", " ");
+
+            // Assert
+            assertAll(
+                () -> assertEquals("General", defaultMarket.getCategory()),
+                () -> assertEquals("Yes", defaultMarket.getYesLabel()),
+                () -> assertEquals("No", defaultMarket.getNoLabel()),
+                
+                () -> assertEquals("General", nullMarket.getCategory()),
+                () -> assertEquals("Yes", nullMarket.getYesLabel()),
+                () -> assertEquals("No", nullMarket.getNoLabel()),
+                
+                () -> assertEquals("General", blankMarket.getCategory()),
+                () -> assertEquals("Yes", blankMarket.getYesLabel()),
+                () -> assertEquals("No", blankMarket.getNoLabel())
+            );
+        }
+
+        @Test
+        @DisplayName("7-arg constructor stores custom category and labels")
+        void constructorStoresCustomCategoryAndLabels() {
+            // Arrange & Act
+            Market customMarket = new Market("id", "Name", "Desc", 100.0, 
+                    "Politics", "Kamala", "Trump");
+
+            // Assert
+            assertEquals("Politics", customMarket.getCategory());
+            assertEquals("Kamala", customMarket.getYesLabel());
+            assertEquals("Trump", customMarket.getNoLabel());
+        }
     }
 
     // ======================== PRICE CALCULATIONS ========================

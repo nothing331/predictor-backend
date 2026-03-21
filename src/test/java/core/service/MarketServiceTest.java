@@ -34,13 +34,15 @@ public class MarketServiceTest {
     private UserService userService;
     @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
+    @Mock
+    private TradeService tradeService;
 
     private MarketService marketService;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        marketService = new MarketService(repository, marketStore, settlementEngine, userService, eventPublisher);
+        marketService = new MarketService(repository, marketStore, settlementEngine, userService, eventPublisher, tradeService);
     }
 
     @Test
@@ -69,5 +71,37 @@ public class MarketServiceTest {
         verify(settlementEngine).settleMarket(market, users);
         verify(userService).saveAll(users);
         verify(repository).saveAll(any());
+    }
+
+    @Test
+    public void testGetMarketById_resolvedMarket_emitsCertainties() {
+        // Arrange
+        String marketId = "market-resolved-1";
+        Market market = new Market(marketId, "Resolved Market", "Desc");
+        // Simulate LMSR price shift (not 1.0 / 0.0)
+        market.applyTrade(Outcome.NO, 50); 
+        market.resolveMarket(Outcome.NO);
+
+        when(marketStore.get(marketId)).thenReturn(market);
+        when(tradeService.getTotalCostByMarketId(marketId)).thenReturn(new java.math.BigDecimal("150.00"));
+
+        // Act
+        api.dto.GetAllMarket response = marketService.getMarketById(marketId);
+
+        // Assert
+        assertEquals(Outcome.NO.toString(), response.getResolvedOutcome());
+        assertEquals("RESOLVED", response.getStatus());
+
+        // Even though LMSR prices are something like 0.3 / 0.7, 
+        // the response should emit the resolved certainty (1.0 for NO, 0.0 for YES).
+        for (core.market.MarketStats stats : response.getOutcomes()) {
+            if (stats.getOutcomeId() == Outcome.NO) {
+                assertEquals(1.0, stats.getProbability(), 0.001);
+            } else if (stats.getOutcomeId() == Outcome.YES) {
+                assertEquals(0.0, stats.getProbability(), 0.001);
+            }
+        }
+        
+        assertEquals(new java.math.BigDecimal("150.00"), response.getTotalValue());
     }
 }
