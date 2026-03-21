@@ -15,7 +15,6 @@ import core.market.Market;
 import core.market.Outcome;
 import core.repository.port.MarketRepository;
 import core.repository.port.TradeRepository;
-import core.service.UserService;
 import core.store.MarketStore;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -57,6 +56,27 @@ public class TradeService {
             }
         }
         return trades;
+    }
+
+    public Collection<Trade> getTradesByMarketId(String marketId) {
+        if (marketId == null || marketId.isBlank()) {
+            throw new IllegalArgumentException("marketId must not be blank");
+        }
+        return repository.loadByMarketId(marketId);
+    }
+
+    /**
+     * Returns the total amount spent (sum of all trade costs) in a given market.
+     * Executed as a single SQL SUM aggregate — no rows are loaded into memory.
+     *
+     * @param marketId the market to aggregate
+     * @return total cost as BigDecimal, or 0 if no trades exist
+     */
+    public BigDecimal getTotalCostByMarketId(String marketId) {
+        if (marketId == null || marketId.isBlank()) {
+            throw new IllegalArgumentException("marketId must not be blank");
+        }
+        return repository.sumCostByMarketId(marketId);
     }
 
     @Transactional

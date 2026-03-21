@@ -42,6 +42,15 @@ public class MarketEntity {
     @Enumerated(EnumType.STRING)
     private Outcome resolvedOutcome;
 
+    @Column(name = "category")
+    private String category;
+
+    @Column(name = "yes_label")
+    private String yesLabel;
+
+    @Column(name = "no_label")
+    private String noLabel;
+
     @Column(name = "created_at")
     private Timestamp createdAt;
 
@@ -52,8 +61,9 @@ public class MarketEntity {
     }
 
     public MarketEntity(String marketId, String marketName, String marketDescription, BigDecimal qYes, BigDecimal qNo,
-            BigDecimal liquidityParam, MarketStatus status, Outcome resolvedOutcome, Timestamp createdAt,
-            Timestamp resolvedAt) {
+            BigDecimal liquidityParam, MarketStatus status, Outcome resolvedOutcome,
+            String category, String yesLabel, String noLabel,
+            Timestamp createdAt, Timestamp resolvedAt) {
         this.marketId = marketId;
         this.marketName = marketName;
         this.marketDescription = marketDescription;
@@ -62,6 +72,9 @@ public class MarketEntity {
         this.liquidityParam = liquidityParam;
         this.status = status;
         this.resolvedOutcome = resolvedOutcome;
+        this.category = category;
+        this.yesLabel = yesLabel;
+        this.noLabel = noLabel;
         this.createdAt = createdAt;
         this.resolvedAt = resolvedAt;
     }
@@ -145,5 +158,29 @@ public class MarketEntity {
 
     public void setResolvedAt(Timestamp resolvedAt) {
         this.resolvedAt = resolvedAt;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public String getYesLabel() {
+        return yesLabel;
+    }
+
+    public void setYesLabel(String yesLabel) {
+        this.yesLabel = yesLabel;
+    }
+
+    public String getNoLabel() {
+        return noLabel;
+    }
+
+    public void setNoLabel(String noLabel) {
+        this.noLabel = noLabel;
     }
 }

@@ -2,15 +2,16 @@ package core.service;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import org.springframework.stereotype.Service;
-
 import org.springframework.context.ApplicationEventPublisher;
 
 import api.dto.GetAllMarket;
 import core.event.MarketCreatedEvent;
 import core.event.MarketResolvedEvent;
 import core.market.Market;
+import core.market.MarketStats;
 import core.market.Outcome;
 import core.repository.port.MarketRepository;
 import core.settlement.SettlementEngine;
@@ -25,14 +26,16 @@ public class MarketService {
     private final SettlementEngine settlementEngine;
     private final UserService userService;
     private final ApplicationEventPublisher eventPublisher;
+    private final TradeService tradeService;
 
     public MarketService(MarketRepository repository, MarketStore marketStore, SettlementEngine settlementEngine,
-            UserService userService, ApplicationEventPublisher eventPublisher) {
+            UserService userService, ApplicationEventPublisher eventPublisher, TradeService tradeService) {
         this.repository = repository;
         this.marketStore = marketStore;
         this.settlementEngine = settlementEngine;
         this.userService = userService;
         this.eventPublisher = eventPublisher;
+        this.tradeService = tradeService;
     }
 
     public boolean addMarket(Market market) {
@@ -67,8 +70,7 @@ public class MarketService {
         }
         Collection<GetAllMarket> getAllMarkets = new ArrayList<>();
         for (Market market : markets) {
-            getAllMarkets.add(new GetAllMarket(market.getMarketId(), market.getMarketName(),
-                    market.getMarketDescription(), market.getStatus(), market.getResolvedOutcome()));
+            getAllMarkets.add(toGetAllMarket(market));
         }
         return getAllMarkets;
     }
@@ -78,8 +80,7 @@ public class MarketService {
         if (market == null) {
             return null;
         }
-        return new GetAllMarket(market.getMarketId(), market.getMarketName(),
-                market.getMarketDescription(), market.getStatus(), market.getResolvedOutcome());
+        return toGetAllMarket(market);
     }
 
     @Transactional
@@ -126,5 +127,28 @@ public class MarketService {
 
     public Collection<Market> loadAll() {
         return marketStore.getAll();
+    }
+
+    private GetAllMarket toGetAllMarket(Market market) {
+        List<MarketStats> outcomes = new ArrayList<>();
+
+        boolean isResolved = market.getStatus() == core.market.MarketStatus.RESOLVED;
+        Outcome winner = market.getResolvedOutcome();
+
+        // After resolution, LMSR prices are stale — emit settled certainties instead.
+        double yesProb = isResolved ? (winner == Outcome.YES ? 1.0 : 0.0) : market.getYesPrice();
+        double noProb  = isResolved ? (winner == Outcome.NO  ? 1.0 : 0.0) : market.getNoPrice();
+
+        outcomes.add(new MarketStats(Outcome.YES, market.getYesLabel(), yesProb));
+        outcomes.add(new MarketStats(Outcome.NO, market.getNoLabel(), noProb));
+
+        return new GetAllMarket(
+                market.getMarketId(),
+                market.getMarketName(),
+                market.getStatus(),
+                market.getResolvedOutcome(),
+                market.getCategory(),
+                outcomes,
+                tradeService.getTotalCostByMarketId(market.getMarketId()));
     }
 }
