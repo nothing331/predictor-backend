@@ -15,12 +15,20 @@ public class Market {
     private double liquidity; // Liquidity parameter (b) for LMSR
     private MarketStatus status;
     private Outcome resolvedOutcome;
+    private String category;
+    private String yesLabel;
+    private String noLabel;
 
     public Market(String marketId, String marketName, String marketDescription) {
         this(marketId, marketName, marketDescription, 100.0);
     }
 
     public Market(String marketId, String marketName, String marketDescription, double liquidity) {
+        this(marketId, marketName, marketDescription, liquidity, null, null, null);
+    }
+
+    public Market(String marketId, String marketName, String marketDescription, double liquidity,
+            String category, String yesLabel, String noLabel) {
         this.marketId = marketId;
         this.marketName = marketName;
         this.marketDescription = marketDescription;
@@ -29,6 +37,9 @@ public class Market {
         this.liquidity = liquidity;
         this.status = MarketStatus.OPEN;
         this.resolvedOutcome = null;
+        this.category = (category != null && !category.isBlank()) ? category : "General";
+        this.yesLabel = (yesLabel != null && !yesLabel.isBlank()) ? yesLabel : "Yes";
+        this.noLabel  = (noLabel  != null && !noLabel.isBlank())  ? noLabel  : "No";
     }
 
     /**
@@ -71,6 +82,18 @@ public class Market {
 
     public Outcome getResolvedOutcome() {
         return this.resolvedOutcome;
+    }
+
+    public String getCategory() {
+        return this.category;
+    }
+
+    public String getYesLabel() {
+        return this.yesLabel;
+    }
+
+    public String getNoLabel() {
+        return this.noLabel;
     }
 
     /**
