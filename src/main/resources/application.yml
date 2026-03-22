@@ -49,8 +49,6 @@ spring:
             redirect-uri: "http://localhost:8080/auth/google/callback"
 
 app:
-  persistence:
-    mode: db
   demo:
     auth:
       enabled: false

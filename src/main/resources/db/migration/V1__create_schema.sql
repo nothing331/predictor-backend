@@ -4,7 +4,7 @@
 CREATE SCHEMA IF NOT EXISTS market;
 
 -- Set search path
-ALTER DATABASE prediction_market SET search_path TO market, public;
+-- ALTER DATABASE prediction_market SET search_path TO market, public;
 
 -- Create users table
 CREATE TABLE IF NOT EXISTS market.users (

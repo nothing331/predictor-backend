@@ -84,19 +84,8 @@ public class DbMarketAdapter implements MarketRepository {
                 entity.getMarketDescription(),
                 entity.getLiquidityParam().doubleValue());
 
-        // Use reflection or setters if available in Domain object to set state
-        // correctly
-        // Market.java: setQYes/setQNo are deprecated/internal but available via json
-        // setters or similar?
-        // Actually Market has setQYes/setQNo.
-        // And resolveMarket sets status/outcome.
-
-        // Since we are restoring from persistence, we need to bypass business logic
-        // checks if possible
-        // but Market.setQYes checks if market is OPEN. If market is RESOLVED, we can't
-        // set QYes?
-        // This is a domain model issue.
-        // However, let's try to set them.
+        // Restore persisted state without re-running domain transitions like
+        // "resolveMarket" or the OPEN-only share guards.
 
         try {
             // Reflection is safer to bypass "is open" checks
