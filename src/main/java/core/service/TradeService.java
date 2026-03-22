@@ -65,6 +65,13 @@ public class TradeService {
         return repository.loadByMarketId(marketId);
     }
 
+    public Collection<Trade> getTradesByMarketIdOrdered(String marketId) {
+        if (marketId == null || marketId.isBlank()) {
+            throw new IllegalArgumentException("marketId must not be blank");
+        }
+        return repository.loadByMarketIdOrdered(marketId);
+    }
+
     /**
      * Returns the total amount spent (sum of all trade costs) in a given market.
      * Executed as a single SQL SUM aggregate — no rows are loaded into memory.
@@ -125,7 +132,12 @@ public class TradeService {
                 trade.getUserId(),
                 trade.getOutcome().toString(),
                 trade.getShareCount(),
-                trade.getCost()));
+                trade.getCost(),
+                market.getYesPrice(),
+                market.getNoPrice(),
+                market.getQYes(),
+                market.getQNo(),
+                market.getStatus().toString()));
         
         return trade;
     }
