@@ -14,6 +14,8 @@ import db.entity.TradeEntity;
 public interface JpaTradeRepository extends JpaRepository<TradeEntity, Long> {
     List<TradeEntity> findByMarketId(String marketId);
 
+    List<TradeEntity> findByMarketIdOrderByTradedAtAsc(String marketId);
+
     @Query("SELECT COALESCE(SUM(t.cost), 0) FROM TradeEntity t WHERE t.marketId = :marketId")
     BigDecimal sumCostByMarketId(@Param("marketId") String marketId);
 }

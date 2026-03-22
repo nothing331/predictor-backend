@@ -1,6 +1,7 @@
 package core.repository.adapter.json;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,14 @@ public class TradeJsonAdapter implements TradeRepository {
     public Collection<Trade> loadByMarketId(String marketId) {
         return fileTradeRepository.loadAllFromJson().stream()
                 .filter(t -> marketId.equals(t.getMarketId()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<Trade> loadByMarketIdOrdered(String marketId) {
+        return fileTradeRepository.loadAllFromJson().stream()
+                .filter(t -> marketId.equals(t.getMarketId()))
+                .sorted(Comparator.comparing(Trade::getCreatedAt))
                 .collect(Collectors.toList());
     }
 

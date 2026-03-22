@@ -41,6 +41,11 @@ public class DualWriteTradeAdapter implements TradeRepository {
     }
 
     @Override
+    public Collection<Trade> loadByMarketIdOrdered(String marketId) {
+        return dbAdapter.loadByMarketIdOrdered(marketId);
+    }
+
+    @Override
     public BigDecimal sumCostByMarketId(String marketId) {
         return dbAdapter.sumCostByMarketId(marketId);
     }

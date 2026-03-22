@@ -1,6 +1,7 @@
 package core.repository.adapter.db;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -69,8 +70,8 @@ public class DbMarketAdapter implements MarketRepository {
                 market.getCategory(),
                 market.getYesLabel(),
                 market.getNoLabel(),
-                null, // createdAt — managed by DB default
-                null  // resolvedAt — managed by DB default
+                market.getCreatedAt() != null ? Timestamp.from(market.getCreatedAt()) : null,
+                market.getResolvedAt() != null ? Timestamp.from(market.getResolvedAt()) : null
         );
     }
 
@@ -131,6 +132,18 @@ public class DbMarketAdapter implements MarketRepository {
                 java.lang.reflect.Field noLabelField = Market.class.getDeclaredField("noLabel");
                 noLabelField.setAccessible(true);
                 noLabelField.set(market, entity.getNoLabel());
+            }
+
+            if (entity.getCreatedAt() != null) {
+                java.lang.reflect.Field createdAtField = Market.class.getDeclaredField("createdAt");
+                createdAtField.setAccessible(true);
+                createdAtField.set(market, entity.getCreatedAt().toInstant());
+            }
+
+            if (entity.getResolvedAt() != null) {
+                java.lang.reflect.Field resolvedAtField = Market.class.getDeclaredField("resolvedAt");
+                resolvedAtField.setAccessible(true);
+                resolvedAtField.set(market, entity.getResolvedAt().toInstant());
             }
 
         } catch (Exception e) {
