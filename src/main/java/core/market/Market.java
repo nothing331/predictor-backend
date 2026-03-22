@@ -1,6 +1,7 @@
 package core.market;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -18,6 +19,8 @@ public class Market {
     private String category;
     private String yesLabel;
     private String noLabel;
+    private Instant createdAt;
+    private Instant resolvedAt;
 
     public Market(String marketId, String marketName, String marketDescription) {
         this(marketId, marketName, marketDescription, 100.0);
@@ -40,6 +43,8 @@ public class Market {
         this.category = (category != null && !category.isBlank()) ? category : "General";
         this.yesLabel = (yesLabel != null && !yesLabel.isBlank()) ? yesLabel : "Yes";
         this.noLabel  = (noLabel  != null && !noLabel.isBlank())  ? noLabel  : "No";
+        this.createdAt = Instant.now();
+        this.resolvedAt = null;
     }
 
     /**
@@ -94,6 +99,14 @@ public class Market {
 
     public String getNoLabel() {
         return this.noLabel;
+    }
+
+    public Instant getCreatedAt() {
+        return this.createdAt;
+    }
+
+    public Instant getResolvedAt() {
+        return this.resolvedAt;
     }
 
     /**
@@ -183,6 +196,7 @@ public class Market {
 
         resolvedOutcome = outcome;
         status = MarketStatus.RESOLVED;
+        resolvedAt = Instant.now();
     }
 
     public void validate() {
