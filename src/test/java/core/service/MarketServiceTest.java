@@ -89,8 +89,8 @@ public class MarketServiceTest {
         api.dto.GetAllMarket response = marketService.getMarketById(marketId);
 
         // Assert
-        assertEquals(Outcome.NO.toString(), response.getResolvedOutcome());
-        assertEquals("RESOLVED", response.getStatus());
+        assertEquals(Outcome.NO, response.getResolvedOutcome());
+        assertEquals(MarketStatus.RESOLVED, response.getStatus());
 
         // Even though LMSR prices are something like 0.3 / 0.7, 
         // the response should emit the resolved certainty (1.0 for NO, 0.0 for YES).
