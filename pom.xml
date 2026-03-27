@@ -159,11 +159,16 @@
         <artifactId>google-api-client</artifactId>
         <version>2.2.0</version>
     </dependency>
-    <dependency>
-        <groupId>com.google.http-client</groupId>
-        <artifactId>google-http-client-gson</artifactId>
-        <version>1.43.3</version>
-    </dependency>
+        <dependency>
+            <groupId>com.google.http-client</groupId>
+            <artifactId>google-http-client-gson</artifactId>
+            <version>1.43.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.posthog</groupId>
+            <artifactId>posthog-server</artifactId>
+            <version>2.3.3</version>
+        </dependency>
 
 
     </dependencies>
