@@ -1,5 +1,9 @@
 # Prediction Market Backend – Week by Week Build Plan
 
+Note: this document is historical build-planning material. The current backend
+uses PostgreSQL-backed persistence with Flyway migrations rather than the older
+file-based JSON persistence ideas documented below.
+
 This document is the **authoritative guide** for building a Polymarket‑style prediction market backend using **Java**, **free currency**, and **binary (YES/NO) markets**.
 
 The goal is **correctness first**, then persistence, then APIs, then real‑time updates.
@@ -269,25 +273,17 @@ re-use the same core logic without changes.
 
 ---
 
-## Step 3 — Implement file-based repositories
+## Step 3 — Persistence direction changed
 
-**Purpose:** Provide a working persistence layer without introducing a database
-yet. This is the simplest reliable storage for Week 4.
+The project no longer uses the older JSON-file persistence plan.
 
-**How to do it:**
-- Store each domain collection in a JSON file.
-- Write atomically: write to temp file, then rename.
-- On load, fail fast if a file is missing or invalid.
+Current direction:
+- PostgreSQL is the system of record
+- Flyway manages schema evolution
+- Spring Data / DB adapters back the repositories
+- local development should run PostgreSQL and Redis, typically via Docker
 
-**Files to add:**
-- `persistence/file/FileUserRepository.java`
-- `persistence/file/FileMarketRepository.java`
-- `persistence/file/FileTradeRepository.java`
-
-**Data files (runtime):**
-- `data/users.json`
-- `data/markets.json`
-- `data/trades.json`
+Any references below to file-based persistence should be treated as superseded.
 
 ---
 
