@@ -11,6 +11,8 @@ import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 
 import api.dto.auth.AuthUserResponse;
 import api.dto.auth.TokenResponse;
+import core.analytics.AnalyticsEventNames;
+import core.analytics.AnalyticsService;
 import core.user.User;
 
 
@@ -22,6 +24,7 @@ public class AuthService {
     @Autowired private RefreshTokenService refreshTokenService;
     @Autowired private GoogleIdTokenVerifier googleIdTokenVerifier;
     @Autowired private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    @Autowired private AnalyticsService analyticsService;
 
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String clientId;
@@ -58,6 +61,9 @@ public class AuthService {
         // 4. Issue your own tokens
         String accessToken  = jwtService.generateAccessToken(user);
         String refreshToken = refreshTokenService.create(user);
+        identifyUser(user);
+        analyticsService.capture(user.getUserId(), AnalyticsEventNames.LOGIN_SUCCEEDED, java.util.Map.of(
+                "provider", "google"));
 
         return new TokenResponse(accessToken, refreshToken, (int) (jwtExpiryMs / 1000));
      }
@@ -80,17 +86,28 @@ public class AuthService {
 
         String accessToken  = jwtService.generateAccessToken(newUser);
         String refreshToken = refreshTokenService.create(newUser);
+        identifyUser(newUser);
+        analyticsService.capture(newUser.getUserId(), AnalyticsEventNames.REGISTER_SUCCEEDED, java.util.Map.of(
+                "provider", "demo"));
         return new TokenResponse(accessToken, refreshToken, (int) (jwtExpiryMs / 1000));
     }
 
     public TokenResponse demoLogin(String username, String password) {
         User user = userService.findByUserName(username);
         if (user == null || user.getPasswordHash() == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
+            if (user != null) {
+                analyticsService.capture(user.getUserId(), AnalyticsEventNames.LOGIN_FAILED, java.util.Map.of(
+                        "provider", "demo",
+                        "reason", "Invalid username or password"));
+            }
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid username or password");
         }
 
         String accessToken  = jwtService.generateAccessToken(user);
         String refreshToken = refreshTokenService.create(user);
+        identifyUser(user);
+        analyticsService.capture(user.getUserId(), AnalyticsEventNames.LOGIN_SUCCEEDED, java.util.Map.of(
+                "provider", "demo"));
         return new TokenResponse(accessToken, refreshToken, (int) (jwtExpiryMs / 1000));
     }
 
@@ -119,7 +136,21 @@ public class AuthService {
             user.getEmail(),
             user.getDisplayName(),
             user.getPictureUrl(),
-            user.getBalance()
+            user.getBalance(),
+            user.getRole().name()
         );
+    }
+
+    private void identifyUser(User user) {
+        java.util.Map<String, Object> properties = new java.util.LinkedHashMap<>();
+        if (user.getEmail() != null) {
+            properties.put("email", user.getEmail());
+        }
+        if (user.getDisplayName() != null) {
+            properties.put("displayName", user.getDisplayName());
+        }
+        properties.put("role", user.getRole().name());
+        properties.put("emailVerified", user.isEmailVerified());
+        analyticsService.identify(user.getUserId(), properties);
     }
 }

@@ -2,8 +2,9 @@ package api.controller;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,6 +20,8 @@ import api.dto.CreateMarketRequest;
 import api.dto.GetAllMarket;
 import api.dto.MarketHistoryResponse;
 import api.dto.ResolveMarketRequest;
+import core.analytics.AnalyticsEventNames;
+import core.analytics.AnalyticsService;
 import core.service.MarketHistoryService;
 import core.service.MarketService;
 import jakarta.validation.Valid;
@@ -26,10 +29,17 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/v1/markets")
 public class MarketController {
-    @Autowired
-    private MarketService marketService;
-    @Autowired
-    private MarketHistoryService marketHistoryService;
+
+    private final MarketService marketService;
+    private final MarketHistoryService marketHistoryService;
+    private final AnalyticsService analyticsService;
+
+    public MarketController(MarketService marketService, MarketHistoryService marketHistoryService,
+            AnalyticsService analyticsService) {
+        this.marketService = marketService;
+        this.marketHistoryService = marketHistoryService;
+        this.analyticsService = analyticsService;
+    }
 
     @PostMapping
     public ResponseEntity<?> createMarket(@Valid @RequestBody CreateMarketRequest request) {
@@ -50,15 +60,46 @@ public class MarketController {
     }
 
     @GetMapping
-    public ResponseEntity<Collection<GetAllMarket>> getAllMarkets(@RequestParam(required = false) String status) {
-        return ResponseEntity.ok(marketService.getAll(status));
+    public ResponseEntity<Collection<GetAllMarket>> getAllMarkets(@RequestParam(required = false) String status,
+            java.security.Principal principal) {
+        Collection<GetAllMarket> markets = marketService.getAll(status);
+        if (principal != null) {
+            Map<String, Object> properties = new LinkedHashMap<>();
+            properties.put("resultCount", markets.size());
+            if (status != null && !status.isBlank()) {
+                properties.put("statusFilter", status);
+            }
+            analyticsService.capture(principal.getName(), AnalyticsEventNames.MARKET_LIST_VIEWED, properties);
+        }
+        return ResponseEntity.ok(markets);
     }
 
     @GetMapping("/{marketId}")
-    public ResponseEntity<api.dto.GetAllMarket> getMarketById(@PathVariable String marketId) {
+    public ResponseEntity<api.dto.GetAllMarket> getMarketById(@PathVariable String marketId,
+            java.security.Principal principal) {
         api.dto.GetAllMarket market = marketService.getMarketById(marketId);
         if (market == null) {
+            if (principal != null) {
+                analyticsService.capture(principal.getName(), AnalyticsEventNames.MARKET_VIEW_FAILED, Map.of(
+                        "marketId", marketId,
+                        "httpStatus", HttpStatus.NOT_FOUND.value(),
+                        "route", "/v1/markets/" + marketId,
+                        "errorType", "NotFound",
+                        "message", "Market not found"));
+            }
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        if (principal != null) {
+            Map<String, Object> properties = new LinkedHashMap<>();
+            properties.put("marketId", marketId);
+            properties.put("marketStatus", market.getStatus().toString());
+            if (market.getCategory() != null) {
+                properties.put("category", market.getCategory());
+            }
+            if (market.getResolvedOutcome() != null) {
+                properties.put("resolvedOutcome", market.getResolvedOutcome().toString());
+            }
+            analyticsService.capture(principal.getName(), AnalyticsEventNames.MARKET_VIEWED, properties);
         }
         return ResponseEntity.ok(market);
     }

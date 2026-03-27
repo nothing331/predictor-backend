@@ -10,5 +10,6 @@ public record AuthUserResponse(
     String email,
     String name,
     String pictureUrl,
-    BigDecimal balance
+    BigDecimal balance,
+    String role
 ) {}

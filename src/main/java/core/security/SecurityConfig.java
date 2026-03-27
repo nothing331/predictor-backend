@@ -20,8 +20,7 @@ public class SecurityConfig {
     @Autowired private JwtService jwtService;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {        http
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm
@@ -38,6 +37,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/v1/auth/logout").permitAll()
                 // Everything else requires a valid access token
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/v1/markets").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/v1/markets/{marketId}/resolve").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .exceptionHandling(eh -> eh

@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import api.dto.GetAllMarket;
 import core.event.MarketCreatedEvent;
@@ -55,7 +57,10 @@ public class MarketService {
 
         marketStore.put(market);
 
-        eventPublisher.publishEvent(new MarketCreatedEvent(market.getMarketId(), market.getMarketName()));
+        eventPublisher.publishEvent(new MarketCreatedEvent(
+                market.getMarketId(),
+                market.getMarketName(),
+                currentActorUserId()));
 
         return true;
     }
@@ -117,7 +122,10 @@ public class MarketService {
         saveAll(marketStore.getAll());
 
         // 4. Publish Event
-        eventPublisher.publishEvent(new MarketResolvedEvent(market.getMarketId(), outcomeId));
+        eventPublisher.publishEvent(new MarketResolvedEvent(
+                market.getMarketId(),
+                outcomeId,
+                currentActorUserId()));
     }
 
     public void saveAll(Collection<Market> markets) {
@@ -155,5 +163,13 @@ public class MarketService {
                 market.getCategory(),
                 outcomes,
                 tradeService.getTotalCostByMarketId(market.getMarketId()));
+    }
+
+    private String currentActorUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        return authentication.getName();
     }
 }

@@ -28,7 +28,9 @@ public class JwtService {
     }
 
     public String generateAccessToken(User user) {
-        return Jwts.builder().setSubject(user.getUserId().toString()).claim("email", user.getEmail())
+        return Jwts.builder().setSubject(user.getUserId().toString())
+                .claim("email", user.getEmail())
+                .claim("role", user.getRole().name())
                 .setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + expiryMs)).signWith(key())
                 .compact();
     }
