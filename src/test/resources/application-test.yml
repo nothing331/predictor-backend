@@ -47,6 +47,11 @@ app:
   jwt-secret: "test_secret_key_which_is_at_least_32_bytes_long"
   jwt-expiry-ms: 900000 
   jwt-refresh-expiry-day: 30
+  analytics:
+    posthog:
+      enabled: false
+      api-key: ""
+      host: "https://eu.i.posthog.com"
 
 ratelimit:
   window-seconds: 60

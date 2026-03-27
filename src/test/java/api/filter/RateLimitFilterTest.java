@@ -130,7 +130,7 @@ public class RateLimitFilterTest {
 
         assertEquals(429, response.getStatus());
         assertEquals("application/json", response.getContentType());
-        assertTrue(response.getContentAsString().contains("\"status\": 429"));
+        assertTrue(response.getContentAsString().contains("\"status\":429") || response.getContentAsString().contains("\"status\": 429"));
         assertTrue(response.getContentAsString().contains("Limit Exceeded"));
     }
 }

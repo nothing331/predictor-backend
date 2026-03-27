@@ -88,7 +88,8 @@ public class DemoAuthIntegrationTest {
         mockMvc.perform(get("/v1/auth/me")
                 .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("demo@example.com"));
+                .andExpect(jsonPath("$.email").value("demo@example.com"))
+                .andExpect(jsonPath("$.role").value("USER"));
 
         // 5. Login with wrong password -> should fail
         String wrongLoginReq = "{\"username\":\"demo_user\",\"password\":\"wrong_pass\"}";
@@ -103,5 +104,35 @@ public class DemoAuthIntegrationTest {
         // This test specifically needs to run without "demo" profile.
         // But since this class has @ActiveProfiles("demo"), we'll skip this logic here 
         // OR we can create another test class without @ActiveProfiles("demo").
+    }
+
+    @Test
+    public void testManualAdminRoleSurvivesDemoLogin() throws Exception {
+        mockMvc.perform(post("/v1/auth/demo/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"username\":\"demo_user\",\"password\":\"demo_pass\",\"email\":\"demo@example.com\"}"))
+                .andExpect(status().isOk());
+
+        UserEntity promotedUser = userRepository.findAll().get(0);
+        promotedUser.setRole("ADMIN");
+        userRepository.save(promotedUser);
+
+        MvcResult loginResult = mockMvc.perform(post("/v1/auth/demo/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"username\":\"demo_user\",\"password\":\"demo_pass\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        UserEntity updatedUser = userRepository.findAll().get(0);
+        assertEquals("ADMIN", updatedUser.getRole());
+
+        TokenResponse tokenResponse = objectMapper.readValue(
+                loginResult.getResponse().getContentAsString(),
+                TokenResponse.class);
+
+        mockMvc.perform(get("/v1/auth/me")
+                .header("Authorization", "Bearer " + tokenResponse.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("ADMIN"));
     }
 }

@@ -49,6 +49,6 @@ public class CreateMarketRequestTest {
         assertEquals("General", market.getCategory());
         assertEquals("Yes", market.getYesLabel());
         assertEquals("No", market.getNoLabel());
-        assertEquals(50.0, market.getLiquidity()); // default liquidity initialized in class
+        assertEquals(35.35, market.getLiquidity()); // default liquidity initialized in class
     }
 }

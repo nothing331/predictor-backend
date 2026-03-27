@@ -58,6 +58,12 @@ public class AuthIntegrationTest {
     @MockBean
     private GoogleIdTokenVerifier googleIdTokenVerifier;
 
+    @MockBean
+    private core.ratelimit.RateLimiterService rateLimiterService;
+
+    @Autowired
+    private core.service.JwtService jwtService;
+
     @BeforeEach
     public void setup() {
         refreshTokenRepository.deleteAll();
@@ -108,6 +114,7 @@ public class AuthIntegrationTest {
         assertEquals("test@example.com", user.getEmail());
         assertEquals("sub_123", user.getGoogleSub());
         assertEquals(0, java.math.BigDecimal.valueOf(1000.0).compareTo(user.getBalance())); // default balance
+        assertEquals("USER", user.getRole()); // role is USER
     }
 
     @Test
@@ -164,7 +171,8 @@ public class AuthIntegrationTest {
         mockMvc.perform(get("/v1/auth/me")
                 .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("test@example.com"));
+                .andExpect(jsonPath("$.email").value("test@example.com"))
+                .andExpect(jsonPath("$.role").value("USER"));
     }
 
     @Test
@@ -257,5 +265,92 @@ public class AuthIntegrationTest {
         // Verify balance is still 500.0, not reset to 1000.0
         UserEntity updatedUser = userRepository.findAll().stream().filter(u -> "sub_123".equals(u.getGoogleSub())).findFirst().get();
         assertEquals(0, java.math.BigDecimal.valueOf(500.0).compareTo(updatedUser.getBalance()));
+        assertEquals("USER", updatedUser.getRole());
+    }
+
+    @Test
+    public void testRoleAuthorization() throws Exception {
+        User admin = new User(java.util.UUID.randomUUID().toString());
+        admin.setGoogleSub("admin_sub");
+        admin.setEmail("admin@example.com");
+        admin.setDisplayName("Admin User");
+        admin.setRole(core.user.UserRole.ADMIN);
+        userService.addUser(admin); // to create in DB
+
+        String adminToken = jwtService.generateAccessToken(admin);
+
+        User normalUser = new User(java.util.UUID.randomUUID().toString());
+        normalUser.setGoogleSub("user_sub");
+        normalUser.setEmail("user@example.com");
+        normalUser.setDisplayName("Normal User");
+        normalUser.setRole(core.user.UserRole.USER);
+        userService.addUser(normalUser);
+
+        String userToken = jwtService.generateAccessToken(normalUser);
+
+        String createMarketReq = "{\"name\":\"Will it rain?\", \"description\":\"Will it rain today?\", \"closeTime\":\"2030-01-01T00:00:00Z\", \"category\":\"Weather\", \"yesLabel\":\"Yes\", \"noLabel\":\"No\"}";
+
+        // Unauthenticated -> 401
+        mockMvc.perform(post("/v1/markets")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createMarketReq))
+                .andExpect(status().isUnauthorized());
+
+        // Authenticated USER -> 403
+        mockMvc.perform(post("/v1/markets")
+                .header("Authorization", "Bearer " + userToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createMarketReq))
+                .andExpect(status().isForbidden());
+
+        // Authenticated ADMIN -> 200 (wait, it's 201 Created)
+        mockMvc.perform(post("/v1/markets")
+                .header("Authorization", "Bearer " + adminToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createMarketReq))
+                .andExpect(status().isCreated());
+
+        // Trading by USER -> works (no 403 or 401)
+        mockMvc.perform(post("/v1/markets/test-market-id/trades")
+                .header("Authorization", "Bearer " + userToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+                .andExpect(result -> {
+                    int s = result.getResponse().getStatus();
+                    assertTrue(s != 401 && s != 403);
+                });
+    }
+
+    @Test
+    public void testManualAdminRoleSurvivesGoogleLogin() throws Exception {
+        when(googleIdTokenVerifier.verify("valid_token"))
+            .thenReturn(createMockGoogleToken("sub_123", "test@example.com", "Test User"));
+
+        mockMvc.perform(post("/v1/auth/google")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tokenId\":\"valid_token\"}"))
+                .andExpect(status().isOk());
+
+        UserEntity promotedUser = userRepository.findAll().get(0);
+        promotedUser.setRole("ADMIN");
+        userRepository.save(promotedUser);
+
+        MvcResult loginResult = mockMvc.perform(post("/v1/auth/google")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"tokenId\":\"valid_token\"}"))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        UserEntity updatedUser = userRepository.findAll().get(0);
+        assertEquals("ADMIN", updatedUser.getRole());
+
+        TokenResponse tokenResponse = objectMapper.readValue(
+                loginResult.getResponse().getContentAsString(),
+                TokenResponse.class);
+
+        mockMvc.perform(get("/v1/auth/me")
+                .header("Authorization", "Bearer " + tokenResponse.accessToken()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.role").value("ADMIN"));
     }
 }
