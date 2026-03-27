@@ -1,18 +1,16 @@
 package core.service;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
 import api.dto.GetUsersRequest;
-import core.user.User;
-import core.user.Position;
 import core.repository.port.UserRepository;
 import core.store.UserStore;
-import core.user.User;
 import core.user.GoogleProfile;
+import core.user.User;
 
 @Service
 public class UserService {
@@ -25,13 +23,18 @@ public class UserService {
     }
 
     public void saveAll(Collection<User> users) {
-        if (users != null) {
-            for (User user : users) {
-                user.validate();
-                userStore.put(user);
-            }
+        if (users == null) {
+            return;
         }
-        repository.saveAll(userStore.getAll());
+
+        List<User> usersToSave = new ArrayList<>();
+        for (User user : users) {
+            user.validate();
+            userStore.put(user);
+            usersToSave.add(user);
+        }
+
+        repository.saveAll(usersToSave);
     }
 
     public Collection<User> loadAll() {
@@ -49,7 +52,7 @@ public class UserService {
         }
 
         userStore.put(user);
-        saveAll(userStore.getAll());
+        repository.saveAll(List.of(user));
         return user;
     }
 
@@ -64,43 +67,46 @@ public class UserService {
     public void saveUser(User user) {
         user.validate();
         userStore.put(user);
-        saveAll(userStore.getAll());
+        repository.saveAll(List.of(user));
     }
 
     public User getUserById(String userId) {
+        User persisted = repository.loadById(userId);
+        if (persisted != null) {
+            userStore.put(persisted);
+            return persisted;
+        }
         return userStore.get(userId);
     }
 
     public User findByEmail(String email) {
-        // First check store (cache)
-        User cached = loadAll().stream()
+        User persisted = repository.loadByEmail(email);
+        if (persisted != null) {
+            userStore.put(persisted);
+            return persisted;
+        }
+
+        return loadAll().stream()
                 .filter(u -> email.equalsIgnoreCase(u.getEmail()))
                 .findFirst()
                 .orElse(null);
-        if (cached != null) return cached;
-        
-        // Then check repository
-        return repository.loadByEmail(email);
     }
 
     public User findByUserName(String userName) {
-        // First check store (cache)
-        User cached = loadAll().stream()
+        User persisted = repository.loadByUserName(userName);
+        if (persisted != null) {
+            userStore.put(persisted);
+            return persisted;
+        }
+
+        return loadAll().stream()
                 .filter(u -> userName.equalsIgnoreCase(u.getDisplayName()))
                 .findFirst()
                 .orElse(null);
-        if (cached != null) return cached;
-
-        // Then check repository
-        return repository.loadByUserName(userName);
     }
 
     public User upsertGoogleUser(GoogleProfile profile) {
-        Collection<User> storedUsers = userStore.getAll();
-        User existingUser = storedUsers.stream()
-                .filter(u -> profile.googleSub().equals(u.getGoogleSub()))
-                .findFirst()
-                .orElse(null);
+        User existingUser = getUserById(profile.googleSub());
 
         if (existingUser != null) {
             existingUser.setGoogleSub(profile.googleSub());

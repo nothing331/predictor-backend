@@ -42,6 +42,9 @@ public class UserEntity {
     @Column(name = "password_hash")
     private String passwordHash;
 
+    @Column(name = "role", nullable = false, length = 20)
+    private String role;
+
     protected UserEntity() {
     }
 
@@ -63,6 +66,8 @@ public class UserEntity {
     public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
 
     // getters and setters
     public String getUserId() {

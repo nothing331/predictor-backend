@@ -119,6 +119,7 @@ public class DbUserAdapter implements UserRepository {
                     existing.setPictureUrl(user.getPictureUrl());
                     existing.setEmailVerified(user.isEmailVerified());
                     existing.setPasswordHash(user.getPasswordHash());
+                    existing.setRole(user.getRole() != null ? user.getRole().name() : "USER");
                     return existing;
                 })
                 .orElseGet(() -> {
@@ -133,6 +134,7 @@ public class DbUserAdapter implements UserRepository {
                     entity.setPictureUrl(user.getPictureUrl());
                     entity.setEmailVerified(user.isEmailVerified());
                     entity.setPasswordHash(user.getPasswordHash());
+                    entity.setRole(user.getRole() != null ? user.getRole().name() : "USER");
                     return entity;
                 });
     }
@@ -145,6 +147,7 @@ public class DbUserAdapter implements UserRepository {
         user.setPictureUrl(entity.getPictureUrl());
         user.setEmailVerified(entity.isEmailVerified());
         user.setPasswordHash(entity.getPasswordHash());
+        user.setRole(entity.getRole() != null ? core.user.UserRole.valueOf(entity.getRole()) : core.user.UserRole.USER);
 
         // Hydrate positions
         List<PositionEntity> posEntities = jpaPositionRepository.findByUserId(entity.getUserId());

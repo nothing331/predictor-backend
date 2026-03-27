@@ -17,6 +17,7 @@ public class User {
     private boolean emailVerified;
     private String passwordHash;
     private BigDecimal balance;
+    private UserRole role = UserRole.USER;
     private Map<String, Position> positions;
 
     /**
@@ -106,6 +107,17 @@ public class User {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(UserRole role) {
+        if (role == null) {
+            throw new IllegalArgumentException("Role cannot be null");
+        }
+        this.role = role;
     }
 
     public Position getPosition(String marketId) {
