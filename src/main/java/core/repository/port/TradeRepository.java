@@ -13,5 +13,9 @@ public interface TradeRepository {
 
     Collection<Trade> loadByMarketIdOrdered(String marketId);
 
+    Collection<Trade> loadByUserIdOrderedDesc(String userId);
+
+    Collection<Trade> loadByUserIdAndMarketIdOrderedDesc(String userId, String marketId);
+
     BigDecimal sumCostByMarketId(String marketId);
 }

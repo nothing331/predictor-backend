@@ -50,10 +50,16 @@ public class AuthIntegrationTest {
     private core.repository.adapter.db.JpaRefreshTokenRepository refreshTokenRepository;
 
     @Autowired
+    private core.repository.adapter.db.JpaTradeRepository tradeRepository;
+
+    @Autowired
     private core.service.UserService userService;
 
     @Autowired
     private core.store.UserStore userStore;
+
+    @Autowired
+    private core.store.MarketStore marketStore;
 
     @MockBean
     private GoogleIdTokenVerifier googleIdTokenVerifier;
@@ -67,6 +73,7 @@ public class AuthIntegrationTest {
     @BeforeEach
     public void setup() {
         refreshTokenRepository.deleteAll();
+        tradeRepository.deleteAll();
         userRepository.deleteAll();
         userStore.clear();
     }
@@ -229,6 +236,18 @@ public class AuthIntegrationTest {
     }
 
     @Test
+    public void testAccountSummaryRequiresAuthentication() throws Exception {
+        mockMvc.perform(get("/v1/users/me/summary"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    public void testMarketPositionRequiresAuthentication() throws Exception {
+        mockMvc.perform(get("/v1/markets/market-1/me"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     public void testSpoofedUserIdHeaderRejected() throws Exception {
         // 9. Spoofed userId rejected
         // Since auth changes have been implemented, passing a userId header alone won't bypass the JWT check on protected routes
@@ -352,5 +371,143 @@ public class AuthIntegrationTest {
                 .header("Authorization", "Bearer " + tokenResponse.accessToken()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.role").value("ADMIN"));
+    }
+
+    @Test
+    public void testAccountSummaryReturnsEmptyRecentMarketsForUserWithNoTrades() throws Exception {
+        User user = new User(java.util.UUID.randomUUID().toString());
+        user.setEmail("empty-summary@example.com");
+        user.setDisplayName("Empty Summary User");
+        user.setBalance(new java.math.BigDecimal("321.45"));
+        userService.addUser(user);
+
+        String accessToken = jwtService.generateAccessToken(user);
+
+        mockMvc.perform(get("/v1/users/me/summary")
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(user.getUserId()))
+                .andExpect(jsonPath("$.availableBalance").value(321.45))
+                .andExpect(jsonPath("$.recentMarkets.length()").value(0));
+    }
+
+    @Test
+    public void testAccountSummaryReturnsBalanceAndLastThreeMarkets() throws Exception {
+        User user = new User(java.util.UUID.randomUUID().toString());
+        user.setEmail("summary@example.com");
+        user.setDisplayName("Summary User");
+        user.setBalance(new java.math.BigDecimal("777.77"));
+        userService.addUser(user);
+
+        String accessToken = jwtService.generateAccessToken(user);
+
+        core.market.Market marketA = new core.market.Market("summary-market-a", "Market A", "Desc");
+        marketA.applyTrade(core.market.Outcome.YES, 12.0);
+        core.market.Market marketB = new core.market.Market("summary-market-b", "Market B", "Desc");
+        marketB.resolveMarket(core.market.Outcome.NO);
+        core.market.Market marketC = new core.market.Market("summary-market-c", "Market C", "Desc");
+        marketC.applyTrade(core.market.Outcome.NO, 8.0);
+        core.market.Market marketD = new core.market.Market("summary-market-d", "Market D", "Desc");
+
+        marketStore.put(marketA);
+        marketStore.put(marketB);
+        marketStore.put(marketC);
+        marketStore.put(marketD);
+
+        tradeRepository.saveAll(java.util.List.of(
+                new db.entity.TradeEntity(null, user.getUserId(), "summary-market-c", core.market.Outcome.YES,
+                        new java.math.BigDecimal("3.5"), new java.math.BigDecimal("2.50"),
+                        java.sql.Timestamp.from(java.time.Instant.parse("2026-03-27T12:00:00Z"))),
+                new db.entity.TradeEntity(null, user.getUserId(), "summary-market-a", core.market.Outcome.YES,
+                        new java.math.BigDecimal("2.0"), new java.math.BigDecimal("1.25"),
+                        java.sql.Timestamp.from(java.time.Instant.parse("2026-03-27T11:00:00Z"))),
+                new db.entity.TradeEntity(null, user.getUserId(), "summary-market-c", core.market.Outcome.NO,
+                        new java.math.BigDecimal("1.0"), new java.math.BigDecimal("0.95"),
+                        java.sql.Timestamp.from(java.time.Instant.parse("2026-03-27T10:30:00Z"))),
+                new db.entity.TradeEntity(null, user.getUserId(), "summary-market-b", core.market.Outcome.NO,
+                        new java.math.BigDecimal("4.0"), new java.math.BigDecimal("3.00"),
+                        java.sql.Timestamp.from(java.time.Instant.parse("2026-03-27T10:00:00Z"))),
+                new db.entity.TradeEntity(null, user.getUserId(), "summary-market-d", core.market.Outcome.YES,
+                        new java.math.BigDecimal("5.0"), new java.math.BigDecimal("4.00"),
+                        java.sql.Timestamp.from(java.time.Instant.parse("2026-03-27T09:00:00Z")))));
+
+        mockMvc.perform(get("/v1/users/me/summary")
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(user.getUserId()))
+                .andExpect(jsonPath("$.availableBalance").value(777.77))
+                .andExpect(jsonPath("$.recentMarkets.length()").value(3))
+                .andExpect(jsonPath("$.recentMarkets[0].marketId").value("summary-market-c"))
+                .andExpect(jsonPath("$.recentMarkets[0].userYesShares").value(3.5))
+                .andExpect(jsonPath("$.recentMarkets[0].userNoShares").value(1.0))
+                .andExpect(jsonPath("$.recentMarkets[0].projectedPayoutIfYes").value(3.5))
+                .andExpect(jsonPath("$.recentMarkets[0].projectedPayoutIfNo").value(1.0))
+                .andExpect(jsonPath("$.recentMarkets[1].marketId").value("summary-market-a"))
+                .andExpect(jsonPath("$.recentMarkets[2].marketId").value("summary-market-b"))
+                .andExpect(jsonPath("$.recentMarkets[2].currentYesChance").value(0.0))
+                .andExpect(jsonPath("$.recentMarkets[2].currentNoChance").value(1.0));
+    }
+
+    @Test
+    public void testMarketPositionReturnsEmptyStateForExistingMarketWithNoTrades() throws Exception {
+        User user = new User(java.util.UUID.randomUUID().toString());
+        user.setEmail("market-position-empty@example.com");
+        user.setDisplayName("Market Position Empty");
+        userService.addUser(user);
+
+        String accessToken = jwtService.generateAccessToken(user);
+
+        core.market.Market market = new core.market.Market("position-empty-market", "Position Empty Market", "Desc");
+        marketStore.put(market);
+
+        mockMvc.perform(get("/v1/markets/position-empty-market/me")
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.marketId").value("position-empty-market"))
+                .andExpect(jsonPath("$.tradeCount").value(0))
+                .andExpect(jsonPath("$.yesSharesHeld").value(0.0))
+                .andExpect(jsonPath("$.noSharesHeld").value(0.0))
+                .andExpect(jsonPath("$.totalInvested").value(0.0))
+                .andExpect(jsonPath("$.trades.length()").value(0));
+    }
+
+    @Test
+    public void testMarketPositionReturnsResolvedPnlAndTradeHistory() throws Exception {
+        User user = new User(java.util.UUID.randomUUID().toString());
+        user.setEmail("market-position@example.com");
+        user.setDisplayName("Market Position User");
+        userService.addUser(user);
+
+        String accessToken = jwtService.generateAccessToken(user);
+
+        core.market.Market market = new core.market.Market("position-market", "Position Market", "Desc");
+        market.resolveMarket(core.market.Outcome.NO);
+        marketStore.put(market);
+
+        tradeRepository.saveAll(java.util.List.of(
+                new db.entity.TradeEntity(null, user.getUserId(), "position-market", core.market.Outcome.NO,
+                        new java.math.BigDecimal("3.0"), new java.math.BigDecimal("4.50"),
+                        java.sql.Timestamp.from(java.time.Instant.parse("2026-03-27T12:00:00Z"))),
+                new db.entity.TradeEntity(null, user.getUserId(), "position-market", core.market.Outcome.YES,
+                        new java.math.BigDecimal("2.0"), new java.math.BigDecimal("5.00"),
+                        java.sql.Timestamp.from(java.time.Instant.parse("2026-03-27T11:00:00Z"))),
+                new db.entity.TradeEntity(null, user.getUserId(), "position-market", core.market.Outcome.NO,
+                        new java.math.BigDecimal("1.5"), new java.math.BigDecimal("2.00"),
+                        java.sql.Timestamp.from(java.time.Instant.parse("2026-03-27T10:00:00Z")))));
+
+        mockMvc.perform(get("/v1/markets/position-market/me")
+                .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.marketId").value("position-market"))
+                .andExpect(jsonPath("$.marketStatus").value("RESOLVED"))
+                .andExpect(jsonPath("$.resolvedOutcome").value("NO"))
+                .andExpect(jsonPath("$.yesSharesHeld").value(2.0))
+                .andExpect(jsonPath("$.noSharesHeld").value(4.5))
+                .andExpect(jsonPath("$.totalInvested").value(11.5))
+                .andExpect(jsonPath("$.realizedPayout").value(4.5))
+                .andExpect(jsonPath("$.realizedNetPnl").value(-7.0))
+                .andExpect(jsonPath("$.tradeCount").value(3))
+                .andExpect(jsonPath("$.trades[0].outcome").value("NO"))
+                .andExpect(jsonPath("$.trades[0].cost").value(4.5));
     }
 }

@@ -20,10 +20,12 @@ import api.dto.CreateMarketRequest;
 import api.dto.GetAllMarket;
 import api.dto.MarketHistoryResponse;
 import api.dto.ResolveMarketRequest;
+import api.dto.UserMarketPositionResponse;
 import core.analytics.AnalyticsEventNames;
 import core.analytics.AnalyticsService;
 import core.service.MarketHistoryService;
 import core.service.MarketService;
+import core.service.MarketUserPositionService;
 import jakarta.validation.Valid;
 
 @RestController
@@ -32,12 +34,14 @@ public class MarketController {
 
     private final MarketService marketService;
     private final MarketHistoryService marketHistoryService;
+    private final MarketUserPositionService marketUserPositionService;
     private final AnalyticsService analyticsService;
 
     public MarketController(MarketService marketService, MarketHistoryService marketHistoryService,
-            AnalyticsService analyticsService) {
+            MarketUserPositionService marketUserPositionService, AnalyticsService analyticsService) {
         this.marketService = marketService;
         this.marketHistoryService = marketHistoryService;
+        this.marketUserPositionService = marketUserPositionService;
         this.analyticsService = analyticsService;
     }
 
@@ -111,6 +115,12 @@ public class MarketController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
             @RequestParam(defaultValue = "200") int limit) {
         return ResponseEntity.ok(marketHistoryService.getHistory(marketId, from, to, limit));
+    }
+
+    @GetMapping("/{marketId}/me")
+    public ResponseEntity<UserMarketPositionResponse> getMarketPosition(@PathVariable String marketId,
+            java.security.Principal principal) {
+        return ResponseEntity.ok(marketUserPositionService.getMarketPosition(principal.getName(), marketId));
     }
 
     @PostMapping("/{marketId}/resolve")

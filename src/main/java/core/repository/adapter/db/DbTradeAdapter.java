@@ -51,6 +51,20 @@ public class DbTradeAdapter implements TradeRepository {
     }
 
     @Override
+    public Collection<Trade> loadByUserIdOrderedDesc(String userId) {
+        return jpaTradeRepository.findByUserIdOrderByTradedAtDesc(userId).stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Collection<Trade> loadByUserIdAndMarketIdOrderedDesc(String userId, String marketId) {
+        return jpaTradeRepository.findByUserIdAndMarketIdOrderByTradedAtDesc(userId, marketId).stream()
+                .map(this::toDomain)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public BigDecimal sumCostByMarketId(String marketId) {
         return jpaTradeRepository.sumCostByMarketId(marketId);
     }

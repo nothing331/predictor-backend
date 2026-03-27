@@ -24,6 +24,7 @@ import core.analytics.AnalyticsService;
 import core.market.MarketStatus;
 import core.service.MarketHistoryService;
 import core.service.MarketService;
+import core.service.MarketUserPositionService;
 
 class MarketControllerAnalyticsTest {
 
@@ -36,12 +37,19 @@ class MarketControllerAnalyticsTest {
     @Mock
     private AnalyticsService analyticsService;
 
+    @Mock
+    private MarketUserPositionService marketUserPositionService;
+
     private MarketController controller;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        controller = new MarketController(marketService, marketHistoryService, analyticsService);
+        controller = new MarketController(
+                marketService,
+                marketHistoryService,
+                marketUserPositionService,
+                analyticsService);
     }
 
     @Test

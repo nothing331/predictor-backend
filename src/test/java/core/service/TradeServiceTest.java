@@ -82,4 +82,41 @@ public class TradeServiceTest {
         assertEquals(expectedCost, actualCost);
         verify(tradeRepository).sumCostByMarketId(marketId);
     }
+
+    @Test
+    @DisplayName("getTradesByUserIdOrderedDesc delegates to TradeRepository")
+    void testGetTradesByUserIdOrderedDesc() {
+        String userId = "test-user-id";
+        Trade trade1 = new Trade("1", userId, "market-1", Outcome.YES, 10.0, new BigDecimal("5.00"),
+                java.time.Instant.parse("2026-03-27T10:00:00Z"));
+        Trade trade2 = new Trade("2", userId, "market-2", Outcome.NO, 4.0, new BigDecimal("3.00"),
+                java.time.Instant.parse("2026-03-27T09:00:00Z"));
+        List<Trade> expectedTrades = Arrays.asList(trade1, trade2);
+
+        when(tradeRepository.loadByUserIdOrderedDesc(userId)).thenReturn(expectedTrades);
+
+        Collection<Trade> actualTrades = tradeService.getTradesByUserIdOrderedDesc(userId);
+
+        assertEquals(expectedTrades, actualTrades);
+        verify(tradeRepository).loadByUserIdOrderedDesc(userId);
+    }
+
+    @Test
+    @DisplayName("getTradesByUserIdAndMarketIdOrderedDesc delegates to TradeRepository")
+    void testGetTradesByUserIdAndMarketIdOrderedDesc() {
+        String userId = "test-user-id";
+        String marketId = "test-market-id";
+        Trade trade1 = new Trade("1", userId, marketId, Outcome.YES, 10.0, new BigDecimal("5.00"),
+                java.time.Instant.parse("2026-03-27T10:00:00Z"));
+        Trade trade2 = new Trade("2", userId, marketId, Outcome.NO, 4.0, new BigDecimal("3.00"),
+                java.time.Instant.parse("2026-03-27T09:00:00Z"));
+        List<Trade> expectedTrades = Arrays.asList(trade1, trade2);
+
+        when(tradeRepository.loadByUserIdAndMarketIdOrderedDesc(userId, marketId)).thenReturn(expectedTrades);
+
+        Collection<Trade> actualTrades = tradeService.getTradesByUserIdAndMarketIdOrderedDesc(userId, marketId);
+
+        assertEquals(expectedTrades, actualTrades);
+        verify(tradeRepository).loadByUserIdAndMarketIdOrderedDesc(userId, marketId);
+    }
 }
