@@ -1,6 +1,32 @@
-version: "3.8"
-
 services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: predictor_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-demo}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: prediction_market
+      POSTGRES_USER: market_user
+      POSTGRES_PASSWORD: dev_password_123
+      REDIS_URL: rediss://default:ATg-AAIncDFjMDQ3ZDg0Nzg3YjA0YWE3OGEzOTg4OWNhMDkwN2JiZXAxMTQzOTg@pro-rodent-14398.upstash.io:6379
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-dev-jwt-secret-dev-jwt-secret-1234}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-local-dev-client-id}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-local-dev-client-secret}
+    volumes:
+      - .:/app
+      - maven_cache:/root/.m2
+
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine # Use Alpine for smaller image size
@@ -22,6 +48,20 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: predictor_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+    driver: local
+  maven_cache:
     driver: local

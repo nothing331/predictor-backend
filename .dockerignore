@@ -1,0 +1,8 @@
+target
+.git
+.agent
+.vscode
+agent_server.log
+postgres_data
+pgadmin_data
+.DS_Store
