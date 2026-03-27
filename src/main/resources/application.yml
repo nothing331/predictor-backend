@@ -11,9 +11,9 @@ spring:
       on-profile: dev | demo
 
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5433}/${POSTGRES_DB:prediction_market}
-    username: ${POSTGRES_USER:market_user}
-    password: ${POSTGRES_PASSWORD:dev_password_123}
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   data:
@@ -56,12 +56,12 @@ app:
   jwt-expiry-ms: 900000 
   jwt-refresh-expiry-day: 30
   cors:
-    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS}
   analytics:
     posthog:
       enabled: ${POSTHOG_ENABLED:false}
       api-key: ${POSTHOG_API_KEY:}
-      host: ${POSTHOG_HOST:https://us.i.posthog.com}
+      host: ${POSTHOG_HOST}
 
 ratelimit:
   window-seconds: 60

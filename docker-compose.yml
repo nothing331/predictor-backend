@@ -16,13 +16,13 @@ services:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-demo}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      POSTGRES_DB: prediction_market
-      POSTGRES_USER: market_user
-      POSTGRES_PASSWORD: dev_password_123
-      REDIS_URL: rediss://default:ATg-AAIncDFjMDQ3ZDg0Nzg3YjA0YWE3OGEzOTg4OWNhMDkwN2JiZXAxMTQzOTg@pro-rodent-14398.upstash.io:6379
-      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-dev-jwt-secret-dev-jwt-secret-1234}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-local-dev-client-id}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-local-dev-client-secret}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
     volumes:
       - .:/app
       - maven_cache:/root/.m2
