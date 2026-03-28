@@ -83,6 +83,7 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-client-id
 - `POST /v1/markets/{marketId}/trades`
 - `GET /v1/users`
 - `GET /v1/users/me/summary`
+- `POST /v1/users/me/gift-claim`
 
 Important authorization note:
 
@@ -288,7 +289,9 @@ Success response:
   "name": "Display Name",
   "pictureUrl": "https://...",
   "balance": 1000.00,
-  "role": "USER"
+  "role": "USER",
+  "giftAvailable": true,
+  "nextGiftAt": null
 }
 ```
 
@@ -296,9 +299,53 @@ Notes:
 
 - the field is `name`, not `displayName`
 - `balance` is returned as a JSON number
+- `giftAvailable` tells the frontend whether the user can currently claim the 12-hour gift
+- `nextGiftAt` is `null` when the gift is already claimable; otherwise it is the ISO-8601 timestamp when the next claim becomes available
 - this is the best endpoint to hydrate the authenticated user after login or app reload
 
-### 4.7 Account summary endpoint
+### 4.7 Gift claim endpoint
+
+Request:
+
+```http
+POST /v1/users/me/gift-claim
+Authorization: Bearer <accessToken>
+```
+
+Success response when the gift is claimed:
+
+```json
+{
+  "balance": 1500.00,
+  "claimedAmount": 500.00,
+  "claimed": true,
+  "lastClaimedAt": "2026-03-28T10:00:00Z",
+  "nextGiftAt": "2026-03-28T22:00:00Z",
+  "giftAvailable": false
+}
+```
+
+Success response when the user is still on cooldown:
+
+```json
+{
+  "balance": 1500.00,
+  "claimedAmount": 0,
+  "claimed": false,
+  "lastClaimedAt": "2026-03-28T10:00:00Z",
+  "nextGiftAt": "2026-03-28T22:00:00Z",
+  "giftAvailable": false
+}
+```
+
+Frontend notes:
+
+- this endpoint is safe to call from a button click without a request body
+- the backend does not throw a cooldown error; instead it returns `claimed: false`
+- after a successful claim, immediately update local balance and gift timer from this response
+- the gift amount is currently fixed at `500` and the cooldown is currently fixed at `12` hours
+
+### 4.8 Account summary endpoint
 
 Request:
 
@@ -711,7 +758,35 @@ Important note:
 - this endpoint currently returns only `userId`
 - it does not return names, emails, or profile images
 
-### 6.9 Get account summary
+### 6.9 Claim 12-hour gift
+
+Request:
+
+```http
+POST /v1/users/me/gift-claim
+Authorization: Bearer <accessToken>
+```
+
+Success response:
+
+```json
+{
+  "balance": 1500.00,
+  "claimedAmount": 500.00,
+  "claimed": true,
+  "lastClaimedAt": "2026-03-28T10:00:00Z",
+  "nextGiftAt": "2026-03-28T22:00:00Z",
+  "giftAvailable": false
+}
+```
+
+Frontend notes:
+
+- call this only for authenticated users
+- if `claimed` is `false`, keep the claim button disabled and use `nextGiftAt` for the countdown
+- if `claimed` is `true`, refresh local user state from this response or refetch `/v1/auth/me`
+
+### 6.10 Get account summary
 
 Request:
 
@@ -768,6 +843,7 @@ Practical impact:
 - you can react to SSE event notifications
 - you can reconstruct current market odds from the REST API responses since probabilities are returned
 - you can build a lightweight account summary using `/v1/users/me/summary`
+- you can build a 12-hour reward button and countdown using `/v1/auth/me` plus `/v1/users/me/gift-claim`
 - you can build a per-market user trade/investment panel using `/v1/markets/{marketId}/me`
 - you still cannot build a full cross-market trade ledger or complete portfolio history from public API alone
 
@@ -1267,8 +1343,17 @@ export type DomainEvent =
 1. Receive token response.
 2. Save access token and refresh token.
 3. Fetch `/v1/auth/me`.
-4. Navigate into the app.
-5. Optionally open SSE stream after authenticated app bootstrap.
+4. Use `giftAvailable` and `nextGiftAt` from `/v1/auth/me` to initialize the reward UI.
+5. Navigate into the app.
+6. Optionally open SSE stream after authenticated app bootstrap.
+
+### Gift claim flow
+
+1. Read `giftAvailable` and `nextGiftAt` from `/v1/auth/me`.
+2. If `giftAvailable` is `false`, disable the claim button and render a countdown to `nextGiftAt`.
+3. If `giftAvailable` is `true`, enable the claim button.
+4. On click, call `POST /v1/users/me/gift-claim`.
+5. Update displayed balance, button state, and countdown from the response.
 
 ### Market list page
 
@@ -1293,6 +1378,7 @@ These are easy places for frontend confusion.
 
 - Token response field is `expiresInSeconds`, not `expiresIn`.
 - `/v1/auth/me` returns `name`, not `displayName`.
+- `/v1/auth/me` also returns `giftAvailable` and `nextGiftAt`; the reward UI should use those rather than trying to calculate cooldown client-side.
 - `/v1/users` currently returns only `userId`.
 - `/v1/markets` and `/v1/markets/{id}` return outcome probabilities and total traded value, but they are still summary-oriented responses rather than full chart history.
 - `/v1/markets/{marketId}/history` is the graph source of truth.
@@ -1301,7 +1387,8 @@ These are easy places for frontend confusion.
 - Native browser `EventSource` cannot attach bearer auth headers.
 - Refresh tokens rotate and must always be replaced client-side.
 - Logout revokes refresh token, not existing access JWTs.
-- Any authenticated user can currently create, resolve, trade, and list users because no role model exists yet.
+- `POST /v1/users/me/gift-claim` returns `200` even during cooldown; use the `claimed` boolean to distinguish success from no-op.
+- Any authenticated user can trade and list users, but only `ADMIN` users can create or resolve markets.
 
 ## 16. Backend Changes the Frontend May Soon Need
 
@@ -1325,6 +1412,8 @@ A frontend engineer should confirm all of the following before calling integrati
 - token refresh overwrites both tokens
 - failed refresh clears auth state
 - `/v1/auth/me` is used to hydrate the user
+- reward button state is driven by `giftAvailable` and `nextGiftAt`
+- reward claim flow handles both `claimed: true` and `claimed: false`
 - logout clears local state immediately
 - SSE reconnect uses backoff
 - REST state is refetched on SSE reconnect
@@ -1347,6 +1436,7 @@ For the current backend, that means the frontend can confidently implement:
 - sign-in
 - session persistence with refresh
 - current-user bootstrap
+- 12-hour gift claim UI
 - market list
 - market detail summary
 - create market
