@@ -2,6 +2,7 @@ package core.repository.adapter.db;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +92,13 @@ public class DbUserAdapter implements UserRepository {
     }
 
     @Override
+    public User loadByIdForUpdate(String userId) {
+        return jpaUserRepository.findByUserIdForUpdate(userId)
+                .map(this::toDomainAndHydrate)
+                .orElse(null);
+    }
+
+    @Override
     public User loadByEmail(String email) {
         return jpaUserRepository.findByEmail(email)
                 .map(this::toDomainAndHydrate)
@@ -120,6 +128,7 @@ public class DbUserAdapter implements UserRepository {
                     existing.setEmailVerified(user.isEmailVerified());
                     existing.setPasswordHash(user.getPasswordHash());
                     existing.setRole(user.getRole() != null ? user.getRole().name() : "USER");
+                    existing.setLastGiftClaimedAt(toTimestamp(user.getLastGiftClaimedAt()));
                     return existing;
                 })
                 .orElseGet(() -> {
@@ -135,6 +144,7 @@ public class DbUserAdapter implements UserRepository {
                     entity.setEmailVerified(user.isEmailVerified());
                     entity.setPasswordHash(user.getPasswordHash());
                     entity.setRole(user.getRole() != null ? user.getRole().name() : "USER");
+                    entity.setLastGiftClaimedAt(toTimestamp(user.getLastGiftClaimedAt()));
                     return entity;
                 });
     }
@@ -148,6 +158,7 @@ public class DbUserAdapter implements UserRepository {
         user.setEmailVerified(entity.isEmailVerified());
         user.setPasswordHash(entity.getPasswordHash());
         user.setRole(entity.getRole() != null ? core.user.UserRole.valueOf(entity.getRole()) : core.user.UserRole.USER);
+        user.setLastGiftClaimedAt(toInstant(entity.getLastGiftClaimedAt()));
 
         // Hydrate positions
         List<PositionEntity> posEntities = jpaPositionRepository.findByUserId(entity.getUserId());
@@ -165,5 +176,13 @@ public class DbUserAdapter implements UserRepository {
         }
 
         return user;
+    }
+
+    private Timestamp toTimestamp(Instant instant) {
+        return instant == null ? null : Timestamp.from(instant);
+    }
+
+    private Instant toInstant(Timestamp timestamp) {
+        return timestamp == null ? null : timestamp.toInstant();
     }
 }

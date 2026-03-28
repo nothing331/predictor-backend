@@ -5,13 +5,16 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import api.dto.GiftClaimResponse;
 import api.dto.GetUsersRequest;
 import api.dto.UserAccountSummaryResponse;
 import core.service.AccountSummaryService;
+import core.service.GiftService;
 import core.service.UserService;
 
 @RestController
@@ -21,6 +24,8 @@ public class UserController {
     private UserService userService;
     @Autowired
     private AccountSummaryService accountSummaryService;
+    @Autowired
+    private GiftService giftService;
 
     @GetMapping
     public ResponseEntity<List<GetUsersRequest>> getAllUsers() {
@@ -31,5 +36,10 @@ public class UserController {
     @GetMapping("/me/summary")
     public ResponseEntity<UserAccountSummaryResponse> getAccountSummary(Principal principal) {
         return ResponseEntity.ok(accountSummaryService.getSummary(principal.getName()));
+    }
+
+    @PostMapping("/me/gift-claim")
+    public ResponseEntity<GiftClaimResponse> claimGift(Principal principal) {
+        return ResponseEntity.ok(giftService.claimGift(principal.getName()));
     }
 }

@@ -45,6 +45,9 @@ public class UserEntity {
     @Column(name = "role", nullable = false, length = 20)
     private String role;
 
+    @Column(name = "last_gift_claimed_at")
+    private Timestamp lastGiftClaimedAt;
+
     protected UserEntity() {
     }
 
@@ -68,6 +71,8 @@ public class UserEntity {
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    public Timestamp getLastGiftClaimedAt() { return lastGiftClaimedAt; }
+    public void setLastGiftClaimedAt(Timestamp lastGiftClaimedAt) { this.lastGiftClaimedAt = lastGiftClaimedAt; }
 
     // getters and setters
     public String getUserId() {

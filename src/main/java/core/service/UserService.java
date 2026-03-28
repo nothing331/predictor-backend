@@ -79,6 +79,15 @@ public class UserService {
         return userStore.get(userId);
     }
 
+    public User getUserByIdForUpdate(String userId) {
+        User persisted = repository.loadByIdForUpdate(userId);
+        if (persisted != null) {
+            userStore.put(persisted);
+            return persisted;
+        }
+        return null;
+    }
+
     public User findByEmail(String email) {
         User persisted = repository.loadByEmail(email);
         if (persisted != null) {

@@ -1,6 +1,7 @@
 package core.user;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +19,7 @@ public class User {
     private String passwordHash;
     private BigDecimal balance;
     private UserRole role = UserRole.USER;
+    private Instant lastGiftClaimedAt;
     private Map<String, Position> positions;
 
     /**
@@ -118,6 +120,14 @@ public class User {
             throw new IllegalArgumentException("Role cannot be null");
         }
         this.role = role;
+    }
+
+    public Instant getLastGiftClaimedAt() {
+        return lastGiftClaimedAt;
+    }
+
+    public void setLastGiftClaimedAt(Instant lastGiftClaimedAt) {
+        this.lastGiftClaimedAt = lastGiftClaimedAt;
     }
 
     public Position getPosition(String marketId) {

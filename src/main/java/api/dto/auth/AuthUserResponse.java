@@ -1,6 +1,7 @@
 package api.dto.auth;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 /**
  * Frontend-safe representation of a logged-in user.
@@ -11,5 +12,7 @@ public record AuthUserResponse(
     String name,
     String pictureUrl,
     BigDecimal balance,
-    String role
+    String role,
+    boolean giftAvailable,
+    Instant nextGiftAt
 ) {}

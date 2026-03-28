@@ -20,6 +20,7 @@ import core.user.User;
 public class AuthService {
 
     @Autowired private UserService userService;
+    @Autowired private GiftService giftService;
     @Autowired private JwtService jwtService;
     @Autowired private RefreshTokenService refreshTokenService;
     @Autowired private GoogleIdTokenVerifier googleIdTokenVerifier;
@@ -131,13 +132,16 @@ public class AuthService {
         if (user == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
+        GiftService.GiftStatus giftStatus = giftService.getGiftStatus(user);
         return new AuthUserResponse(
             user.getUserId(),
             user.getEmail(),
             user.getDisplayName(),
             user.getPictureUrl(),
             user.getBalance(),
-            user.getRole().name()
+            user.getRole().name(),
+            giftStatus.giftAvailable(),
+            giftStatus.nextGiftAt()
         );
     }
 
