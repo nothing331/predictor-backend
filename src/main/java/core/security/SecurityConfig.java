@@ -20,7 +20,8 @@ public class SecurityConfig {
     @Autowired private JwtService jwtService;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {        http
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm
@@ -29,7 +30,9 @@ public class SecurityConfig {
                 // Public routes
                 .requestMatchers(HttpMethod.GET,  "/v1/markets").permitAll()
                 .requestMatchers(HttpMethod.GET,  "/v1/markets/{marketId}").permitAll()
+                .requestMatchers(HttpMethod.GET,  "/v1/markets/{marketId}/history").permitAll()
                 .requestMatchers(HttpMethod.GET,  "/v1/stream/events").permitAll()
+                .requestMatchers(HttpMethod.GET,  "/v1/stream/events/").permitAll()
                 // Auth routes (login + refresh are public, rest protected)
                 .requestMatchers(HttpMethod.POST, "/v1/auth/google").permitAll()
                 .requestMatchers(HttpMethod.POST, "/v1/auth/demo/**").permitAll()
