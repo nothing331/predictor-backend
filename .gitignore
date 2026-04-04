@@ -1,0 +1,21 @@
+target/
+.gitignore
+# Docker volumes (don't commit data)
+postgres_data/
+pgadmin_data/
+
+# Environment files
+.env
+
+#DB query
+init-scripts/
+
+#AI files
+AGENTS.md
+predictor-chat.md
+.agent/
+agent_server.log
+FRONTEND_INTEGRATION_GUIDE.md
+BACKEND_BUILD_PLAN.md
+./vscode
+.DS_Store
