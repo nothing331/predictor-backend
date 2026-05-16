@@ -37,6 +37,8 @@ public class TradeServiceTest {
     private MarketStore marketStore;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private LedgerService ledgerService;
 
     private TradeService tradeService;
 
@@ -44,7 +46,7 @@ public class TradeServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         tradeService = new TradeService(tradeRepository, userService, marketRepository, 
-                tradeEngine, marketStore, eventPublisher);
+                tradeEngine, marketStore, eventPublisher, ledgerService);
     }
 
     @Test

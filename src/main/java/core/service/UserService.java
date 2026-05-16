@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import api.dto.GetUsersRequest;
 import core.repository.port.UserRepository;
@@ -16,10 +17,12 @@ import core.user.User;
 public class UserService {
     private final UserRepository repository;
     private final UserStore userStore;
+    private final LedgerService ledgerService;
 
-    public UserService(UserRepository repository, UserStore userStore) {
+    public UserService(UserRepository repository, UserStore userStore, LedgerService ledgerService) {
         this.repository = repository;
         this.userStore = userStore;
+        this.ledgerService = ledgerService;
     }
 
     public void saveAll(Collection<User> users) {
@@ -41,6 +44,7 @@ public class UserService {
         return userStore.getAll();
     }
 
+    @Transactional
     public User addUser(User user) {
         Collection<User> storedUsers = userStore.getAll();
 
@@ -53,6 +57,7 @@ public class UserService {
 
         userStore.put(user);
         repository.saveAll(List.of(user));
+        ledgerService.recordStartingBalance(user);
         return user;
     }
 

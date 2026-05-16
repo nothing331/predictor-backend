@@ -28,15 +28,18 @@ public class TradeService {
     private final TradeEngine tradeEngine;
     private final MarketStore marketStore;
     private final ApplicationEventPublisher eventPublisher;
+    private final LedgerService ledgerService;
 
     public TradeService(TradeRepository repository, UserService userService, MarketRepository marketRepository,
-            TradeEngine tradeEngine, MarketStore marketStore, ApplicationEventPublisher eventPublisher) {
+            TradeEngine tradeEngine, MarketStore marketStore, ApplicationEventPublisher eventPublisher,
+            LedgerService ledgerService) {
         this.repository = repository;
         this.userService = userService;
         this.marketRepository = marketRepository;
         this.tradeEngine = tradeEngine;
         this.marketStore = marketStore;
         this.eventPublisher = eventPublisher;
+        this.ledgerService = ledgerService;
     }
 
     public void saveAll(Collection<Trade> trades) {
@@ -105,7 +108,23 @@ public class TradeService {
 
     @Transactional
     public Trade buy(BuyRequest request, String userId, String marketId) {
-        User user = userService.getUserById(userId);
+        if (request.getClientRequestId() == null || request.getClientRequestId().isBlank()) {
+            throw new IllegalArgumentException("clientRequestId must not be blank");
+        }
+
+        Trade existingTrade = repository.loadByUserIdAndClientRequestId(userId, request.getClientRequestId())
+                .orElse(null);
+        if (existingTrade != null) {
+            return existingTrade;
+        }
+
+        User user = userService.getUserByIdForUpdate(userId);
+        existingTrade = repository.loadByUserIdAndClientRequestId(userId, request.getClientRequestId())
+                .orElse(null);
+        if (existingTrade != null) {
+            return existingTrade;
+        }
+
         Market market = marketStore.get(marketId);
 
         if (market == null) {
@@ -136,11 +155,22 @@ public class TradeService {
 
         // Execute valid trade
         Trade trade = tradeEngine.executeTrade(user, market, outcome, sharesToBuy);
+        trade = new Trade(
+                trade.getTradeId(),
+                trade.getUserId(),
+                trade.getMarketId(),
+                trade.getOutcome(),
+                trade.getShareCount(),
+                trade.getCost(),
+                trade.getCreatedAt(),
+                request.getClientRequestId());
 
-        // Persist all changes
+        // Apply the debit FIRST so the persisted user reflects the post-debit balance.
+        // LedgerService is the source of truth for balance writes — see LedgerService docs.
+        ledgerService.recordTradeDebit(trade, user);
         userService.saveUser(user);
         marketRepository.saveAll(java.util.Collections.singletonList(market));
-        repository.saveAll(java.util.Collections.singletonList(trade));
+        trade = repository.save(trade);
 
         // Publish event
         eventPublisher.publishEvent(new TradeExecutedEvent(

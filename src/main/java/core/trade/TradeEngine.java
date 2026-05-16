@@ -11,21 +11,19 @@ import core.user.Position;
 import core.user.User;
 
 /**
- * TradeEngine - The Arbiter of Fairness
- * 
- * This is the ONLY place where:
- * - Money moves
- * - Shares are minted
- * - Positions change
- * 
- * All trades follow the exact 5-step atomic process:
- * 1. Calculate cost (pure read, no mutation)
- * 2. Validate balance (guard rail, fail before any mutation)
- * 3. Apply market update (increase qYes or qNo)
- * 4. Deduct user balance (exact cost, no rounding)
- * 5. Update user position (add shares to user's position)
- * 
- * If ANY step fails, NOTHING changes. This is atomicity.
+ * TradeEngine — mints shares and updates positions/market state.
+ *
+ * <p>Balance is NOT mutated here. {@link core.service.LedgerService#recordTradeDebit}
+ * is the sole writer of {@code user.balance} for trades; this engine only reads
+ * the balance to fail fast on insufficient funds.
+ *
+ * <p>Atomic steps:
+ * 1. Compute cost (pure read).
+ * 2. Validate market open and balance &gt;= cost (read-only guard).
+ * 3. Apply market share update (qYes or qNo).
+ * 4. Apply user position update.
+ *
+ * If any step fails, nothing changes.
  */
 @Component
 public class TradeEngine {
@@ -60,9 +58,6 @@ public class TradeEngine {
             newQNo = currentQNo + sharesToBuy;
         }
 
-        // Compute new user balance
-        BigDecimal newBalance = user.getBalance().subtract(tradeCost);
-
         // Compute new position shares
         // NOTE: We do NOT use getOrCreatePosition() here to avoid mutating user state
         // in Phase 1
@@ -89,8 +84,7 @@ public class TradeEngine {
             market.setQNo(newQNo);
         }
 
-        // Update user balance
-        user.setBalance(newBalance);
+        // Note: user.balance is NOT mutated here — LedgerService.recordTradeDebit owns it.
 
         // Update user position
         // NOW it is safe to create the position if it doesn't exist

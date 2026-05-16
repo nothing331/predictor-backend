@@ -1,5 +1,6 @@
 package core.service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -18,6 +19,7 @@ import core.market.Outcome;
 import core.repository.port.MarketRepository;
 import core.settlement.SettlementEngine;
 import core.store.MarketStore;
+import core.user.Position;
 import core.user.User;
 import jakarta.transaction.Transactional;
 
@@ -29,15 +31,18 @@ public class MarketService {
     private final UserService userService;
     private final ApplicationEventPublisher eventPublisher;
     private final TradeService tradeService;
+    private final LedgerService ledgerService;
 
     public MarketService(MarketRepository repository, MarketStore marketStore, SettlementEngine settlementEngine,
-            UserService userService, ApplicationEventPublisher eventPublisher, TradeService tradeService) {
+            UserService userService, ApplicationEventPublisher eventPublisher, TradeService tradeService,
+            LedgerService ledgerService) {
         this.repository = repository;
         this.marketStore = marketStore;
         this.settlementEngine = settlementEngine;
         this.userService = userService;
         this.eventPublisher = eventPublisher;
         this.tradeService = tradeService;
+        this.ledgerService = ledgerService;
     }
 
     public boolean addMarket(Market market) {
@@ -111,12 +116,17 @@ public class MarketService {
         // 1. Resolve market first (required by SettlementEngine)
         market.resolveMarket(outcome);
 
-        // 2. Load users and settle
-        Collection<User> users = userService.loadAll();
-        settlementEngine.settleMarket(market, users);
+        // 2. Lock affected users in stable order and settle.
+        List<User> users = lockedUsersWithOpenPositions(marketId);
+        for (User user : users) {
+            BigDecimal payout = settlementPayout(user, market);
+            settlementEngine.settleUser(user, market);
+            if (payout.compareTo(BigDecimal.ZERO) > 0) {
+                ledgerService.recordSettlementCredit(market.getMarketId(), user, payout);
+            }
+        }
 
         // 3. Persist state
-        // Persist users (balances updated)
         userService.saveAll(users);
         // Persist markets (status updated)
         saveAll(marketStore.getAll());
@@ -140,6 +150,34 @@ public class MarketService {
 
     public Collection<Market> loadAll() {
         return marketStore.getAll();
+    }
+
+    private List<User> lockedUsersWithOpenPositions(String marketId) {
+        return userService.loadAll().stream()
+                .filter(user -> {
+                    Position position = user.getPosition(marketId);
+                    return position != null && !position.isSettled();
+                })
+                .map(User::getUserId)
+                .sorted()
+                .map(userService::getUserByIdForUpdate)
+                .filter(user -> user != null)
+                .filter(user -> {
+                    Position position = user.getPosition(marketId);
+                    return position != null && !position.isSettled();
+                })
+                .toList();
+    }
+
+    private BigDecimal settlementPayout(User user, Market market) {
+        Position position = user.getPosition(market.getMarketId());
+        if (position == null) {
+            return BigDecimal.ZERO;
+        }
+        if (market.getResolvedOutcome() == Outcome.YES) {
+            return BigDecimal.valueOf(position.getYesShares());
+        }
+        return BigDecimal.valueOf(position.getNoShares());
     }
 
     private GetAllMarket toGetAllMarket(Market market) {

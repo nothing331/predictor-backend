@@ -20,19 +20,28 @@ import core.user.User;
 
 /**
  * Settlement Engine Tests - Week 3 Mandatory Tests
- * 
- * These tests verify the settlement behavior:
- * 
- * PAYOUT TESTS:
- * - Winning YES shares pay exactly shares × 1
- * - Losing shares pay 0
- * - User balance increases correctly
- * - Users with no position receive 0
- * - Settlement is deterministic
- * 
+ *
+ * These tests verify the settlement behavior under the new contract:
+ *
+ * IMPORTANT: SettlementEngine no longer mutates user.balance.
+ * LedgerService.recordSettlementCredit (called by MarketService.resolveMarket)
+ * owns all balance writes. The engine's responsibilities are limited to:
+ *   - Validating the market is RESOLVED
+ *   - Clearing the position (position.clearShares())
+ *   - Marking the position settled (position.markAsSettled())
+ *   - Throwing on invalid inputs (null/missing/already-settled positions,
+ *     unresolved markets, etc.)
+ *
+ * POSITION TESTS:
+ * - Position is cleared (yes/no shares = 0) regardless of outcome
+ * - Position is marked settled
+ * - Balance is NOT mutated by the engine
+ *
  * SAFETY TESTS:
- * - Settling twice does not pay twice
- * - Trades after resolution fail
+ * - Settling twice throws (idempotency via exception)
+ * - settleMarket skips already-settled positions
+ * - Cannot settle unresolved market
+ * - Null market / missing position throw
  */
 public class SettlementEngineTest {
 
@@ -56,8 +65,8 @@ public class SettlementEngineTest {
         class SingleUserPayoutTests {
 
                 @Test
-                @DisplayName("Winning YES shares pay exactly shares × 1")
-                public void testWinningYesShares_PayExactly() {
+                @DisplayName("Settling winning YES position does not mutate balance")
+                public void testWinningYesShares_BalanceUnchanged() {
                         // ARRANGE
                         double yesShares = 25.0;
                         Position position = user.getOrCreatePosition(market.getMarketId());
@@ -70,17 +79,15 @@ public class SettlementEngineTest {
                         // ACT
                         settlementEngine.settleUser(user, market);
 
-                        // ASSERT
-                        BigDecimal expectedPayout = BigDecimal.valueOf(yesShares);
-                        BigDecimal expectedFinalBalance = initialBalance.add(expectedPayout);
-
-                        assertEquals(0, expectedFinalBalance.compareTo(user.getBalance()),
-                                        "Balance should increase by exactly number of winning shares (25 × 1 = 25)");
+                        // ASSERT: balance is NOT mutated by SettlementEngine — LedgerService
+                        // owns balance writes via recordSettlementCredit.
+                        assertEquals(0, initialBalance.compareTo(user.getBalance()),
+                                        "Balance must be unchanged: SettlementEngine does not mutate balance; LedgerService owns balance writes");
                 }
 
                 @Test
-                @DisplayName("Winning NO shares pay exactly shares × 1")
-                public void testWinningNoShares_PayExactly() {
+                @DisplayName("Settling winning NO position does not mutate balance")
+                public void testWinningNoShares_BalanceUnchanged() {
                         // ARRANGE
                         double noShares = 15.5;
                         Position position = user.getOrCreatePosition(market.getMarketId());
@@ -93,17 +100,15 @@ public class SettlementEngineTest {
                         // ACT
                         settlementEngine.settleUser(user, market);
 
-                        // ASSERT
-                        BigDecimal expectedPayout = BigDecimal.valueOf(noShares);
-                        BigDecimal expectedFinalBalance = initialBalance.add(expectedPayout);
-
-                        assertEquals(0, expectedFinalBalance.compareTo(user.getBalance()),
-                                        "Balance should increase by exactly number of winning shares (15.5 × 1 = 15.5)");
+                        // ASSERT: balance is NOT mutated by SettlementEngine — LedgerService
+                        // owns balance writes via recordSettlementCredit.
+                        assertEquals(0, initialBalance.compareTo(user.getBalance()),
+                                        "Balance must be unchanged: SettlementEngine does not mutate balance; LedgerService owns balance writes");
                 }
 
                 @Test
-                @DisplayName("Losing shares pay 0")
-                public void testLosingShares_PayZero() {
+                @DisplayName("Settling a losing position does not mutate balance")
+                public void testLosingShares_BalanceUnchanged() {
                         // ARRANGE: User holds NO shares, but YES wins
                         double noShares = 50.0;
                         Position position = user.getOrCreatePosition(market.getMarketId());
@@ -116,14 +121,14 @@ public class SettlementEngineTest {
                         // ACT
                         settlementEngine.settleUser(user, market);
 
-                        // ASSERT: Balance unchanged (losing shares pay 0)
+                        // ASSERT: Balance unchanged (engine never mutates balance, and losers earn nothing anyway)
                         assertEquals(0, initialBalance.compareTo(user.getBalance()),
-                                        "Balance should be unchanged - losing shares pay 0");
+                                        "Balance must be unchanged: SettlementEngine does not mutate balance; LedgerService owns balance writes");
                 }
 
                 @Test
-                @DisplayName("Mixed position - only winning shares pay out")
-                public void testMixedPosition_OnlyWinningSharesPay() {
+                @DisplayName("Mixed position - SettlementEngine does not mutate balance")
+                public void testMixedPosition_BalanceUnchanged() {
                         // ARRANGE: User holds both YES and NO shares
                         double yesShares = 30.0;
                         double noShares = 20.0;
@@ -137,17 +142,15 @@ public class SettlementEngineTest {
                         // ACT
                         settlementEngine.settleUser(user, market);
 
-                        // ASSERT: Only YES shares pay out
-                        BigDecimal expectedPayout = BigDecimal.valueOf(yesShares); // 30 × 1 = 30
-                        BigDecimal expectedFinalBalance = initialBalance.add(expectedPayout);
-
-                        assertEquals(0, expectedFinalBalance.compareTo(user.getBalance()),
-                                        "Only winning YES shares should pay out (30), losing NO shares pay 0");
+                        // ASSERT: balance is NOT mutated by SettlementEngine — LedgerService
+                        // owns balance writes via recordSettlementCredit.
+                        assertEquals(0, initialBalance.compareTo(user.getBalance()),
+                                        "Balance must be unchanged for mixed positions: SettlementEngine does not mutate balance; LedgerService owns balance writes");
                 }
 
                 @Test
-                @DisplayName("User balance increases correctly after settlement")
-                public void testUserBalanceIncreasesCorrectly() {
+                @DisplayName("Settlement does not mutate balance")
+                public void testSettlementDoesNotMutateBalance() {
                         // ARRANGE
                         BigDecimal initialBalance = new BigDecimal("500.00");
                         user = new User("user-balance", initialBalance);
@@ -161,10 +164,9 @@ public class SettlementEngineTest {
                         // ACT
                         settlementEngine.settleUser(user, market);
 
-                        // ASSERT
-                        BigDecimal expectedBalance = new BigDecimal("600.00"); // 500 + 100
-                        assertEquals(0, expectedBalance.compareTo(user.getBalance()),
-                                        "Balance should be initial (500) + payout (100) = 600");
+                        // ASSERT: balance must remain exactly at the initial value
+                        assertEquals(0, initialBalance.compareTo(user.getBalance()),
+                                        "Balance must be unchanged (still 500.00): SettlementEngine does not mutate balance; LedgerService owns balance writes");
                 }
 
                 @Test
@@ -199,8 +201,8 @@ public class SettlementEngineTest {
         class MultipleUsersPayoutTests {
 
                 @Test
-                @DisplayName("Multiple users with winning positions all receive payouts")
-                public void testMultipleUsersWithWinningPositions() {
+                @DisplayName("settleMarket does not mutate any user's balance")
+                public void testMultipleUsers_BalancesUnchanged() {
                         // ARRANGE
                         User user1 = new User("user-1", new BigDecimal("100.00"));
                         User user2 = new User("user-2", new BigDecimal("200.00"));
@@ -213,21 +215,25 @@ public class SettlementEngineTest {
                         market.resolveMarket(Outcome.YES);
                         List<User> users = Arrays.asList(user1, user2, user3);
 
+                        BigDecimal user1Initial = user1.getBalance();
+                        BigDecimal user2Initial = user2.getBalance();
+                        BigDecimal user3Initial = user3.getBalance();
+
                         // ACT
                         settlementEngine.settleMarket(market, users);
 
-                        // ASSERT
-                        assertEquals(0, new BigDecimal("110.00").compareTo(user1.getBalance()),
-                                        "User1: 100 + 10 = 110");
-                        assertEquals(0, new BigDecimal("220.00").compareTo(user2.getBalance()),
-                                        "User2: 200 + 20 = 220");
-                        assertEquals(0, new BigDecimal("330.00").compareTo(user3.getBalance()),
-                                        "User3: 300 + 30 = 330");
+                        // ASSERT: SettlementEngine does not mutate balance; LedgerService owns balance writes.
+                        assertEquals(0, user1Initial.compareTo(user1.getBalance()),
+                                        "User1 balance must be unchanged: SettlementEngine does not mutate balance; LedgerService owns balance writes");
+                        assertEquals(0, user2Initial.compareTo(user2.getBalance()),
+                                        "User2 balance must be unchanged: SettlementEngine does not mutate balance; LedgerService owns balance writes");
+                        assertEquals(0, user3Initial.compareTo(user3.getBalance()),
+                                        "User3 balance must be unchanged: SettlementEngine does not mutate balance; LedgerService owns balance writes");
                 }
 
                 @Test
-                @DisplayName("Users with no position receive 0 payout")
-                public void testUsersWithNoPosition_ReceiveZero() {
+                @DisplayName("Users with no position have unchanged balance and no error")
+                public void testUsersWithNoPosition_BalanceUnchanged() {
                         // ARRANGE
                         User userWithPosition = new User("user-with", new BigDecimal("100.00"));
                         User userWithoutPosition = new User("user-without", new BigDecimal("200.00"));
@@ -238,21 +244,22 @@ public class SettlementEngineTest {
                         market.resolveMarket(Outcome.YES);
                         List<User> users = Arrays.asList(userWithPosition, userWithoutPosition);
 
+                        BigDecimal balanceWithBefore = userWithPosition.getBalance();
                         BigDecimal balanceWithoutBefore = userWithoutPosition.getBalance();
 
                         // ACT
                         settlementEngine.settleMarket(market, users);
 
-                        // ASSERT
-                        assertEquals(0, new BigDecimal("150.00").compareTo(userWithPosition.getBalance()),
-                                        "User with position should receive payout");
+                        // ASSERT: neither user's balance changes — engine never mutates balance.
+                        assertEquals(0, balanceWithBefore.compareTo(userWithPosition.getBalance()),
+                                        "User with position must have unchanged balance: SettlementEngine does not mutate balance; LedgerService owns balance writes");
                         assertEquals(0, balanceWithoutBefore.compareTo(userWithoutPosition.getBalance()),
-                                        "User without position should have unchanged balance");
+                                        "User without position must have unchanged balance: SettlementEngine does not mutate balance; LedgerService owns balance writes");
                 }
 
                 @Test
-                @DisplayName("Mixed outcomes - winners get paid, losers get nothing")
-                public void testMixedOutcomes_WinnersVsLosers() {
+                @DisplayName("Mixed outcomes - SettlementEngine does not mutate any balance")
+                public void testMixedOutcomes_BalancesUnchanged() {
                         // ARRANGE
                         User yesHolder = new User("yes-holder", new BigDecimal("100.00"));
                         User noHolder = new User("no-holder", new BigDecimal("100.00"));
@@ -263,14 +270,17 @@ public class SettlementEngineTest {
                         market.resolveMarket(Outcome.YES); // YES wins
                         List<User> users = Arrays.asList(yesHolder, noHolder);
 
+                        BigDecimal yesHolderInitial = yesHolder.getBalance();
+                        BigDecimal noHolderInitial = noHolder.getBalance();
+
                         // ACT
                         settlementEngine.settleMarket(market, users);
 
-                        // ASSERT
-                        assertEquals(0, new BigDecimal("125.00").compareTo(yesHolder.getBalance()),
-                                        "YES holder should receive payout (100 + 25)");
-                        assertEquals(0, new BigDecimal("100.00").compareTo(noHolder.getBalance()),
-                                        "NO holder should receive nothing (balance unchanged)");
+                        // ASSERT: neither winner nor loser balance changes — engine never mutates balance.
+                        assertEquals(0, yesHolderInitial.compareTo(yesHolder.getBalance()),
+                                        "YES holder balance must be unchanged: SettlementEngine does not mutate balance; LedgerService owns balance writes");
+                        assertEquals(0, noHolderInitial.compareTo(noHolder.getBalance()),
+                                        "NO holder balance must be unchanged: SettlementEngine does not mutate balance; LedgerService owns balance writes");
                 }
         }
 
@@ -283,8 +293,8 @@ public class SettlementEngineTest {
         class SafetyTests {
 
                 @Test
-                @DisplayName("Settling twice does not pay twice - throws exception")
-                public void testSettlingTwiceDoesNotPayTwice() {
+                @DisplayName("Settling twice throws and balance never changes")
+                public void testSettlingTwiceThrows_BalanceNeverChanges() {
                         // ARRANGE
                         Position position = user.getOrCreatePosition(market.getMarketId());
                         position.setYesShares(100.0);
@@ -296,10 +306,11 @@ public class SettlementEngineTest {
                         settlementEngine.settleUser(user, market);
                         BigDecimal balanceAfterFirstSettlement = user.getBalance();
 
-                        // ASSERT: First settlement worked
-                        assertEquals(0, initialBalance.add(new BigDecimal("100"))
-                                        .compareTo(balanceAfterFirstSettlement),
-                                        "First settlement should add 100 to balance");
+                        // ASSERT: First settlement clears position and does NOT mutate balance.
+                        assertEquals(0, initialBalance.compareTo(balanceAfterFirstSettlement),
+                                        "Balance must be unchanged after first settlement: SettlementEngine does not mutate balance; LedgerService owns balance writes");
+                        assertTrue(position.isSettled(),
+                                        "Position should be marked settled after first settlement");
 
                         // ACT & ASSERT: Second settlement should throw exception
                         IllegalStateException exception = assertThrows(
@@ -310,9 +321,9 @@ public class SettlementEngineTest {
                         assertTrue(exception.getMessage().contains("already settled"),
                                         "Exception message should indicate position is already settled");
 
-                        // Balance should be unchanged after failed second settlement
-                        assertEquals(0, balanceAfterFirstSettlement.compareTo(user.getBalance()),
-                                        "Balance should be unchanged after failed second settlement");
+                        // Balance never changes — neither the successful first call nor the failed second call mutates it.
+                        assertEquals(0, initialBalance.compareTo(user.getBalance()),
+                                        "Balance never changes: SettlementEngine does not mutate balance; LedgerService owns balance writes");
                 }
 
                 @Test
@@ -327,6 +338,9 @@ public class SettlementEngineTest {
 
                         market.resolveMarket(Outcome.YES);
 
+                        BigDecimal user1Initial = user1.getBalance();
+                        BigDecimal user2Initial = user2.getBalance();
+
                         // Settle user1 first
                         settlementEngine.settleUser(user1, market);
                         BigDecimal user1BalanceAfterFirst = user1.getBalance();
@@ -335,11 +349,18 @@ public class SettlementEngineTest {
                         List<User> users = Arrays.asList(user1, user2);
                         settlementEngine.settleMarket(market, users); // Should NOT throw
 
-                        // ASSERT
+                        // ASSERT: balance never changes (engine never mutates balance), and
+                        // already-settled user1 is silently skipped while user2 is settled.
                         assertEquals(0, user1BalanceAfterFirst.compareTo(user1.getBalance()),
-                                        "User1 balance should be unchanged (already settled, skipped)");
-                        assertEquals(0, new BigDecimal("150.00").compareTo(user2.getBalance()),
-                                        "User2 should be settled normally");
+                                        "User1 balance never changes (already settled, skipped): SettlementEngine does not mutate balance; LedgerService owns balance writes");
+                        assertEquals(0, user1Initial.compareTo(user1.getBalance()),
+                                        "User1 balance equals initial: SettlementEngine does not mutate balance; LedgerService owns balance writes");
+                        assertEquals(0, user2Initial.compareTo(user2.getBalance()),
+                                        "User2 balance unchanged: SettlementEngine does not mutate balance; LedgerService owns balance writes");
+                        assertTrue(user2.getPosition(market.getMarketId()).isSettled(),
+                                        "User2 position should be settled normally");
+                        assertEquals(0.0, user2.getPosition(market.getMarketId()).getYesShares(), 0.0001,
+                                        "User2 position should be cleared");
                 }
 
                 @Test
@@ -414,13 +435,20 @@ public class SettlementEngineTest {
                         market1.resolveMarket(Outcome.YES);
                         market2.resolveMarket(Outcome.YES);
 
+                        BigDecimal user1Initial = user1.getBalance();
+                        BigDecimal user2Initial = user2.getBalance();
+
                         // ACT
                         settlementEngine.settleUser(user1, market1);
                         settlementEngine.settleUser(user2, market2);
 
-                        // ASSERT
+                        // ASSERT: identical setups produce identical (unchanged) balances and identical settled state
                         assertEquals(0, user1.getBalance().compareTo(user2.getBalance()),
                                         "Identical setups should produce identical balances");
+                        assertEquals(0, user1Initial.compareTo(user1.getBalance()),
+                                        "User1 balance unchanged: SettlementEngine does not mutate balance; LedgerService owns balance writes");
+                        assertEquals(0, user2Initial.compareTo(user2.getBalance()),
+                                        "User2 balance unchanged: SettlementEngine does not mutate balance; LedgerService owns balance writes");
                         assertEquals(user1.getPosition(market1.getMarketId()).isSettled(),
                                         user2.getPosition(market2.getMarketId()).isSettled(),
                                         "Identical setups should produce identical settled states");
@@ -455,7 +483,7 @@ public class SettlementEngineTest {
                 }
 
                 @Test
-                @DisplayName("Very small fractional shares are handled correctly")
+                @DisplayName("Very small fractional share positions clear without mutating balance")
                 public void testFractionalShares() {
                         // ARRANGE
                         double fractionalShares = 0.001;
@@ -468,16 +496,17 @@ public class SettlementEngineTest {
                         // ACT
                         settlementEngine.settleUser(user, market);
 
-                        // ASSERT
-                        BigDecimal expectedPayout = BigDecimal.valueOf(fractionalShares);
-                        BigDecimal expectedBalance = initialBalance.add(expectedPayout);
-
-                        assertEquals(0, expectedBalance.compareTo(user.getBalance()),
-                                        "Fractional shares should be paid correctly");
+                        // ASSERT: balance unchanged regardless of share size; position cleared & settled.
+                        assertEquals(0, initialBalance.compareTo(user.getBalance()),
+                                        "Balance must be unchanged for fractional shares: SettlementEngine does not mutate balance; LedgerService owns balance writes");
+                        assertEquals(0.0, position.getYesShares(), 0.0001,
+                                        "Fractional YES shares should be cleared to 0");
+                        assertTrue(position.isSettled(),
+                                        "Position should be marked as settled");
                 }
 
                 @Test
-                @DisplayName("Large number of shares are handled correctly")
+                @DisplayName("Large positions clear without mutating balance")
                 public void testLargeNumberOfShares() {
                         // ARRANGE
                         double largeShares = 1_000_000.0;
@@ -490,12 +519,13 @@ public class SettlementEngineTest {
                         // ACT
                         settlementEngine.settleUser(user, market);
 
-                        // ASSERT
-                        BigDecimal expectedPayout = BigDecimal.valueOf(largeShares);
-                        BigDecimal expectedBalance = initialBalance.add(expectedPayout);
-
-                        assertEquals(0, expectedBalance.compareTo(user.getBalance()),
-                                        "Large number of shares should be paid correctly");
+                        // ASSERT: balance unchanged regardless of share size; position cleared & settled.
+                        assertEquals(0, initialBalance.compareTo(user.getBalance()),
+                                        "Balance must be unchanged for large positions: SettlementEngine does not mutate balance; LedgerService owns balance writes");
+                        assertEquals(0.0, position.getYesShares(), 0.0001,
+                                        "Large YES position should be cleared to 0");
+                        assertTrue(position.isSettled(),
+                                        "Position should be marked as settled");
                 }
 
                 @Test
@@ -539,12 +569,13 @@ public class SettlementEngineTest {
                 }
 
                 @Test
-                @DisplayName("Settlement with both outcomes works correctly")
+                @DisplayName("Settlement with both outcomes clears position without mutating balance")
                 public void testBothOutcomesWork() {
                         // Test YES resolution
                         Market marketYes = new Market("market-yes", "Test YES", "Desc");
                         User userYes = new User("user-yes", new BigDecimal("100.00"));
                         userYes.getOrCreatePosition(marketYes.getMarketId()).setYesShares(50.0);
+                        BigDecimal userYesInitial = userYes.getBalance();
                         marketYes.resolveMarket(Outcome.YES);
                         settlementEngine.settleUser(userYes, marketYes);
 
@@ -552,14 +583,23 @@ public class SettlementEngineTest {
                         Market marketNo = new Market("market-no", "Test NO", "Desc");
                         User userNo = new User("user-no", new BigDecimal("100.00"));
                         userNo.getOrCreatePosition(marketNo.getMarketId()).setNoShares(50.0);
+                        BigDecimal userNoInitial = userNo.getBalance();
                         marketNo.resolveMarket(Outcome.NO);
                         settlementEngine.settleUser(userNo, marketNo);
 
-                        // ASSERT: Both should have same final balance
-                        assertEquals(0, new BigDecimal("150.00").compareTo(userYes.getBalance()),
-                                        "YES winner should have 100 + 50 = 150");
-                        assertEquals(0, new BigDecimal("150.00").compareTo(userNo.getBalance()),
-                                        "NO winner should have 100 + 50 = 150");
+                        // ASSERT: neither balance is mutated; both positions cleared & settled.
+                        assertEquals(0, userYesInitial.compareTo(userYes.getBalance()),
+                                        "YES winner balance must be unchanged (still 100.00): SettlementEngine does not mutate balance; LedgerService owns balance writes");
+                        assertEquals(0, userNoInitial.compareTo(userNo.getBalance()),
+                                        "NO winner balance must be unchanged (still 100.00): SettlementEngine does not mutate balance; LedgerService owns balance writes");
+                        assertTrue(userYes.getPosition(marketYes.getMarketId()).isSettled(),
+                                        "YES winner position should be settled");
+                        assertTrue(userNo.getPosition(marketNo.getMarketId()).isSettled(),
+                                        "NO winner position should be settled");
+                        assertEquals(0.0, userYes.getPosition(marketYes.getMarketId()).getYesShares(), 0.0001,
+                                        "YES winner shares should be cleared");
+                        assertEquals(0.0, userNo.getPosition(marketNo.getMarketId()).getNoShares(), 0.0001,
+                                        "NO winner shares should be cleared");
                 }
         }
 }

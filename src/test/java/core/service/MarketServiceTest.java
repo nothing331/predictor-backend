@@ -1,7 +1,7 @@
 package core.service;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,13 +36,16 @@ public class MarketServiceTest {
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
     @Mock
     private TradeService tradeService;
+    @Mock
+    private LedgerService ledgerService;
 
     private MarketService marketService;
 
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        marketService = new MarketService(repository, marketStore, settlementEngine, userService, eventPublisher, tradeService);
+        marketService = new MarketService(repository, marketStore, settlementEngine, userService, eventPublisher,
+                tradeService, ledgerService);
     }
 
     @Test
@@ -68,8 +71,8 @@ public class MarketServiceTest {
         assertEquals(Outcome.YES, market.getResolvedOutcome());
 
         // verify interactions
-        verify(settlementEngine).settleMarket(market, users);
-        verify(userService).saveAll(users);
+        verify(settlementEngine, never()).settleMarket(any(), any());
+        verify(userService).saveAll(List.of());
         verify(repository).saveAll(any());
     }
 

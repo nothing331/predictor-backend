@@ -1,13 +1,11 @@
 package core.settlement;
 
-import java.math.BigDecimal;
 import java.util.Collection;
 
 import org.springframework.stereotype.Component;
 
 import core.market.Market;
 import core.market.MarketStatus;
-import core.market.Outcome;
 import core.user.Position;
 import core.user.User;
 
@@ -48,21 +46,10 @@ public class SettlementEngine {
                             + " already settled");
         }
 
-        // ======================== PHASE 2: COMPUTE PAYOUT ========================
-        Outcome winningOutcome = market.getResolvedOutcome();
-        double winningShares = getWinningShares(position, winningOutcome);
-
-        // Payout = winning shares × 1 (each winning share pays out 1 unit)
-        BigDecimal payout = BigDecimal.valueOf(winningShares);
-        BigDecimal newBalance = user.getBalance().add(payout);
-
-        // ======================== PHASE 3: APPLY MUTATIONS ========================
-        // All validations passed, now we mutate state atomically
-
-        // 1. Update user balance
-        user.setBalance(newBalance);
-
-        // 2. Clear and mark position as settled
+        // ======================== PHASE 2: APPLY MUTATIONS ========================
+        // Balance is NOT mutated here — MarketService calls
+        // LedgerService.recordSettlementCredit with the payout, which owns the
+        // balance write. This engine only clears and marks the position.
         position.clearShares();
         position.markAsSettled();
     }
@@ -87,11 +74,4 @@ public class SettlementEngine {
         }
     }
 
-    private double getWinningShares(Position position, Outcome winningOutcome) {
-        if (winningOutcome == Outcome.YES) {
-            return position.getYesShares();
-        } else {
-            return position.getNoShares();
-        }
-    }
 }

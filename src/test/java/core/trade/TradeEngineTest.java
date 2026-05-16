@@ -83,7 +83,7 @@ public class TradeEngineTest {
     // ========================================================================
 
     @Test
-    public void testExactBalanceDeduction_NoPrecisionLoss() {
+    public void testExactCost_NoPrecisionLoss() {
         // ARRANGE
         BigDecimal initialBalance = new BigDecimal("500.00");
         user = new User("user-exact", initialBalance);
@@ -91,19 +91,16 @@ public class TradeEngineTest {
         // ACT
         Trade trade = tradeEngine.executeTrade(user, market, Outcome.YES, 5);
         BigDecimal tradeCost = trade.getCost();
-        BigDecimal finalBalance = user.getBalance();
 
         // ASSERT
-        // initialBalance - cost = finalBalance (exact BigDecimal arithmetic)
-        BigDecimal expectedBalance = initialBalance.subtract(tradeCost);
-
-        assertEquals(expectedBalance, finalBalance,
-                "Balance deduction must be exact: initialBalance - cost = finalBalance");
-
-        // Verify it's using BigDecimal precision (not double approximation)
-        // The .equals() method checks both value and scale
-        assertTrue(expectedBalance.compareTo(finalBalance) == 0,
-                "Balance calculation must use BigDecimal precision");
+        // TradeEngine no longer mutates balance — LedgerService.recordTradeDebit does.
+        // The engine's contract is to compute an exact BigDecimal cost.
+        assertEquals(initialBalance, user.getBalance(),
+                "TradeEngine must NOT mutate balance — that is LedgerService's job");
+        assertTrue(tradeCost.compareTo(BigDecimal.ZERO) > 0,
+                "Trade cost must be a positive BigDecimal");
+        assertTrue(tradeCost.scale() >= 2,
+                "Trade cost must preserve BigDecimal precision (not double)");
     }
 
     // ========================================================================
