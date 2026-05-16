@@ -19,3 +19,6 @@ FRONTEND_INTEGRATION_GUIDE.md
 BACKEND_BUILD_PLAN.md
 ./vscode
 .DS_Store
+/.agents 
+/docs
+skills-lock.json
