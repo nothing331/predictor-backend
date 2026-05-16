@@ -13,6 +13,9 @@ public class BuyRequest {
     @Min(value = 1, message = "Amount must be greater than 0")
     private Double amount;
 
+    @NotBlank(message = "clientRequestId cannot be empty")
+    private String clientRequestId;
+
     public String getOutcome() {
         return outcome;
     }
@@ -31,5 +34,13 @@ public class BuyRequest {
 
     public void setAmount(Double amount) {
         this.amount = amount;
+    }
+
+    public String getClientRequestId() {
+        return clientRequestId;
+    }
+
+    public void setClientRequestId(String clientRequestId) {
+        this.clientRequestId = clientRequestId;
     }
 }

@@ -2,6 +2,7 @@ package core.repository.adapter.db;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +20,8 @@ public interface JpaTradeRepository extends JpaRepository<TradeEntity, Long> {
     List<TradeEntity> findByUserIdOrderByTradedAtDesc(String userId);
 
     List<TradeEntity> findByUserIdAndMarketIdOrderByTradedAtDesc(String userId, String marketId);
+
+    Optional<TradeEntity> findByUserIdAndClientRequestId(String userId, String clientRequestId);
 
     @Query("SELECT COALESCE(SUM(t.cost), 0) FROM TradeEntity t WHERE t.marketId = :marketId")
     BigDecimal sumCostByMarketId(@Param("marketId") String marketId);

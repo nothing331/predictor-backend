@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Repository;
@@ -19,6 +20,11 @@ public class DbTradeAdapter implements TradeRepository {
 
     public DbTradeAdapter(JpaTradeRepository jpaTradeRepository) {
         this.jpaTradeRepository = jpaTradeRepository;
+    }
+
+    @Override
+    public Trade save(Trade trade) {
+        return toDomain(jpaTradeRepository.save(toEntity(trade)));
     }
 
     @Override
@@ -65,6 +71,12 @@ public class DbTradeAdapter implements TradeRepository {
     }
 
     @Override
+    public Optional<Trade> loadByUserIdAndClientRequestId(String userId, String clientRequestId) {
+        return jpaTradeRepository.findByUserIdAndClientRequestId(userId, clientRequestId)
+                .map(this::toDomain);
+    }
+
+    @Override
     public BigDecimal sumCostByMarketId(String marketId) {
         return jpaTradeRepository.sumCostByMarketId(marketId);
     }
@@ -86,7 +98,8 @@ public class DbTradeAdapter implements TradeRepository {
                 trade.getOutcome(),
                 java.math.BigDecimal.valueOf(trade.getShareCount()),
                 trade.getCost(),
-                Timestamp.from(trade.getCreatedAt()));
+                Timestamp.from(trade.getCreatedAt()),
+                trade.getClientRequestId());
     }
 
     private Trade toDomain(TradeEntity entity) {
@@ -101,7 +114,8 @@ public class DbTradeAdapter implements TradeRepository {
                 entity.getOutcome(),
                 entity.getSharesBought().doubleValue(),
                 entity.getCost(),
-                entity.getTradedAt().toInstant());
+                entity.getTradedAt().toInstant(),
+                entity.getClientRequestId());
     }
 
     private Long parseIdAsLong(String id) {

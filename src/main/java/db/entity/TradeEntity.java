@@ -41,11 +41,19 @@ public class TradeEntity {
     @Column(name = "traded_at")
     private Timestamp tradedAt;
 
+    @Column(name = "client_request_id")
+    private String clientRequestId;
+
     protected TradeEntity() {
     }
 
     public TradeEntity(Long tradeId, String userId, String marketId, Outcome outcome, BigDecimal sharesBought,
             BigDecimal cost, Timestamp tradedAt) {
+        this(tradeId, userId, marketId, outcome, sharesBought, cost, tradedAt, null);
+    }
+
+    public TradeEntity(Long tradeId, String userId, String marketId, Outcome outcome, BigDecimal sharesBought,
+            BigDecimal cost, Timestamp tradedAt, String clientRequestId) {
         this.tradeId = tradeId;
         this.userId = userId;
         this.marketId = marketId;
@@ -53,6 +61,7 @@ public class TradeEntity {
         this.sharesBought = sharesBought;
         this.cost = cost;
         this.tradedAt = tradedAt;
+        this.clientRequestId = clientRequestId;
     }
 
     // getters and setters
@@ -110,5 +119,13 @@ public class TradeEntity {
 
     public void setTradedAt(Timestamp tradedAt) {
         this.tradedAt = tradedAt;
+    }
+
+    public String getClientRequestId() {
+        return clientRequestId;
+    }
+
+    public void setClientRequestId(String clientRequestId) {
+        this.clientRequestId = clientRequestId;
     }
 }
