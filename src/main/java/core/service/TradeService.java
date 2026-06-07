@@ -15,7 +15,6 @@ import core.market.Market;
 import core.market.Outcome;
 import core.repository.port.MarketRepository;
 import core.repository.port.TradeRepository;
-import core.store.MarketStore;
 
 import org.springframework.context.ApplicationEventPublisher;
 import core.event.TradeExecutedEvent;
@@ -26,18 +25,16 @@ public class TradeService {
     private final UserService userService;
     private final MarketRepository marketRepository;
     private final TradeEngine tradeEngine;
-    private final MarketStore marketStore;
     private final ApplicationEventPublisher eventPublisher;
     private final LedgerService ledgerService;
 
     public TradeService(TradeRepository repository, UserService userService, MarketRepository marketRepository,
-            TradeEngine tradeEngine, MarketStore marketStore, ApplicationEventPublisher eventPublisher,
+            TradeEngine tradeEngine, ApplicationEventPublisher eventPublisher,
             LedgerService ledgerService) {
         this.repository = repository;
         this.userService = userService;
         this.marketRepository = marketRepository;
         this.tradeEngine = tradeEngine;
-        this.marketStore = marketStore;
         this.eventPublisher = eventPublisher;
         this.ledgerService = ledgerService;
     }
@@ -112,26 +109,32 @@ public class TradeService {
             throw new IllegalArgumentException("clientRequestId must not be blank");
         }
 
+        // Fast-path idempotency check (no locks). Re-checked after locks below.
         Trade existingTrade = repository.loadByUserIdAndClientRequestId(userId, request.getClientRequestId())
                 .orElse(null);
         if (existingTrade != null) {
             return existingTrade;
         }
 
+        // Lock order: Market (FOR SHARE) -> User (FOR UPDATE).
+        // FOR SHARE on the market row lets concurrent buys coexist but blocks
+        // against Resolution's FOR UPDATE. See docs/adr/0004-lock-order-market-then-user.md.
+        Market market = marketRepository.loadByIdForShare(marketId);
+        if (market == null) {
+            throw new IllegalArgumentException("Market not found: " + marketId);
+        }
+
         User user = userService.getUserByIdForUpdate(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("User not found: " + userId);
+        }
+
+        // Re-check idempotency inside the locks to catch a racing duplicate buy
+        // that committed between the fast-path check and the market lock acquisition.
         existingTrade = repository.loadByUserIdAndClientRequestId(userId, request.getClientRequestId())
                 .orElse(null);
         if (existingTrade != null) {
             return existingTrade;
-        }
-
-        Market market = marketStore.get(marketId);
-
-        if (market == null) {
-            throw new IllegalArgumentException("Market not found: " + marketId);
-        }
-        if (user == null) {
-            throw new IllegalArgumentException("User not found: " + userId);
         }
 
         Outcome outcome;

@@ -19,7 +19,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import core.market.Outcome;
 import core.repository.port.MarketRepository;
 import core.repository.port.TradeRepository;
-import core.store.MarketStore;
 import core.trade.Trade;
 import core.trade.TradeEngine;
 
@@ -34,8 +33,6 @@ public class TradeServiceTest {
     @Mock
     private TradeEngine tradeEngine;
     @Mock
-    private MarketStore marketStore;
-    @Mock
     private ApplicationEventPublisher eventPublisher;
     @Mock
     private LedgerService ledgerService;
@@ -45,8 +42,8 @@ public class TradeServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        tradeService = new TradeService(tradeRepository, userService, marketRepository, 
-                tradeEngine, marketStore, eventPublisher, ledgerService);
+        tradeService = new TradeService(tradeRepository, userService, marketRepository,
+                tradeEngine, eventPublisher, ledgerService);
     }
 
     @Test
