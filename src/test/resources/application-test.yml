@@ -10,9 +10,11 @@ spring:
     driver-class-name: org.h2.Driver
     name: prediction_market
   
-  data:
-    redis:
-      url: redis://localhost:6379 # We might need to mock this or use a dummy
+  # Tests run without Redis. MarketReadCache + MarketCacheInvalidator + RedisConfig
+  # are all @ConditionalOnProperty("spring.data.redis.url"); omitting the property
+  # entirely (rather than setting it to empty) leaves the condition unmatched and
+  # MarketService falls through to Postgres for every read.
+  # See docs/adr/0005-redis-read-cache-cache-aside-delete-after-commit.md.
   
   security:
     oauth2:
@@ -60,3 +62,11 @@ ratelimit:
   sse-connect:
     max: 20
   fail-closed: true
+
+# Settlement worker is disabled in tests so the @Scheduled poller doesn't fire
+# against the H2 in-memory DB during integration tests. Tests that exercise the
+# worker should @TestPropertySource it back on. See
+# docs/adr/0002-async-settlement-via-postgres-queue.md.
+settlement:
+  worker:
+    enabled: false
