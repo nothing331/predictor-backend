@@ -73,3 +73,14 @@ ratelimit:
   sse-connect:
     max: 20
   fail-closed: false
+
+# Async settlement worker. Default-on; disable per-replica by setting enabled=false.
+# See docs/adr/0002-async-settlement-via-postgres-queue.md.
+settlement:
+  worker:
+    enabled: true
+    poll-ms: 1000             # @Scheduled fixedDelay between batches
+    batch-size: 50            # max rows processed per tick
+    max-attempts: 5           # transient retries before terminal failure
+    base-backoff-seconds: 30  # exponential base: 30s, 1m, 2m, 4m, 8m
+    jitter-seconds: 10        # uniform [0, jitter] added to each backoff

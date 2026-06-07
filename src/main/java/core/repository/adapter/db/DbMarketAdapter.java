@@ -46,6 +46,35 @@ public class DbMarketAdapter implements MarketRepository {
     }
 
     @Override
+    public Market loadByIdForUpdate(String marketId) {
+        return jpaMarketRepository.findByMarketIdForUpdate(marketId)
+                .map(this::toDomain)
+                .orElse(null);
+    }
+
+    @Override
+    public Market loadByIdForShare(String marketId) {
+        return jpaMarketRepository.findByMarketIdForShare(marketId)
+                .map(this::toDomain)
+                .orElse(null);
+    }
+
+    @Override
+    public boolean markResolvedIfFullySettled(String marketId) {
+        return jpaMarketRepository.flipResolvedIfFullySettled(marketId) > 0;
+    }
+
+    @Override
+    public boolean markSettlementFailed(String marketId) {
+        return jpaMarketRepository.flipSettlementFailed(marketId) > 0;
+    }
+
+    @Override
+    public boolean flipBackToResolutionPending(String marketId) {
+        return jpaMarketRepository.flipBackToResolutionPending(marketId) > 0;
+    }
+
+    @Override
     public Collection<Market> loadByStatus(String status) {
         try {
             MarketStatus marketStatus = MarketStatus.valueOf(status.toUpperCase());
