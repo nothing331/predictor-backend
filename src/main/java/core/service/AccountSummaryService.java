@@ -17,9 +17,8 @@ import org.springframework.web.server.ResponseStatusException;
 import api.dto.UserAccountSummaryResponse;
 import api.dto.UserRecentMarketSummary;
 import core.market.Market;
-import core.market.MarketStatus;
 import core.market.Outcome;
-import core.store.MarketStore;
+import core.repository.port.MarketRepository;
 import core.trade.Trade;
 import core.user.User;
 
@@ -30,12 +29,13 @@ public class AccountSummaryService {
 
     private final UserService userService;
     private final TradeService tradeService;
-    private final MarketStore marketStore;
+    private final MarketRepository marketRepository;
 
-    public AccountSummaryService(UserService userService, TradeService tradeService, MarketStore marketStore) {
+    public AccountSummaryService(UserService userService, TradeService tradeService,
+            MarketRepository marketRepository) {
         this.userService = userService;
         this.tradeService = tradeService;
-        this.marketStore = marketStore;
+        this.marketRepository = marketRepository;
     }
 
     public UserAccountSummaryResponse getSummary(String userId) {
@@ -55,7 +55,10 @@ public class AccountSummaryService {
 
         List<UserRecentMarketSummary> recentMarkets = new ArrayList<>();
         for (Map.Entry<String, MarketAggregate> entry : selectedMarkets.entrySet()) {
-            Market market = marketStore.get(entry.getKey());
+            // One DB read per recent market (capped at 3). The Redis cache
+            // added in step 7 fronts repository.loadById so the hot path stays
+            // cheap. See docs/adr/0005-redis-read-cache-cache-aside-delete-after-commit.md.
+            Market market = marketRepository.loadById(entry.getKey());
             if (market == null) {
                 continue;
             }
@@ -106,14 +109,14 @@ public class AccountSummaryService {
     }
 
     private double currentYesChance(Market market) {
-        if (market.getStatus() == MarketStatus.RESOLVED) {
+        if (market.getResolvedOutcome() != null) {
             return market.getResolvedOutcome() == Outcome.YES ? 1.0 : 0.0;
         }
         return market.getYesPrice();
     }
 
     private double currentNoChance(Market market) {
-        if (market.getStatus() == MarketStatus.RESOLVED) {
+        if (market.getResolvedOutcome() != null) {
             return market.getResolvedOutcome() == Outcome.NO ? 1.0 : 0.0;
         }
         return market.getNoPrice();

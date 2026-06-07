@@ -18,13 +18,13 @@ import api.dto.MarketHistoryResponse;
 import core.market.Market;
 import core.market.MarketStatus;
 import core.market.Outcome;
-import core.store.MarketStore;
+import core.repository.port.MarketRepository;
 import core.trade.Trade;
 
 public class MarketHistoryServiceTest {
 
     @Mock
-    private MarketStore marketStore;
+    private MarketRepository marketRepository;
 
     @Mock
     private TradeService tradeService;
@@ -34,13 +34,13 @@ public class MarketHistoryServiceTest {
     @BeforeEach
     public void setUp() {
         MockitoAnnotations.openMocks(this);
-        marketHistoryService = new MarketHistoryService(marketStore, tradeService);
+        marketHistoryService = new MarketHistoryService(marketRepository, tradeService);
     }
 
     @Test
     public void getHistory_returnsInitialPointForNewMarket() {
         Market market = new Market("market-1", "Will BTC Rise?", "Desc");
-        when(marketStore.get("market-1")).thenReturn(market);
+        when(marketRepository.loadById("market-1")).thenReturn(market);
         when(tradeService.getTradesByMarketIdOrdered("market-1")).thenReturn(List.of());
 
         MarketHistoryResponse response = marketHistoryService.getHistory("market-1", null, null, 200);
@@ -67,7 +67,7 @@ public class MarketHistoryServiceTest {
         Trade trade2 = new Trade("t2", "u2", "market-2", Outcome.NO, 4.0, new BigDecimal("2.50"),
                 Instant.parse("2026-03-22T10:10:00Z"));
 
-        when(marketStore.get("market-2")).thenReturn(market);
+        when(marketRepository.loadById("market-2")).thenReturn(market);
         when(tradeService.getTradesByMarketIdOrdered("market-2")).thenReturn(List.of(trade1, trade2));
 
         MarketHistoryResponse response = marketHistoryService.getHistory("market-2", null, null, 200);
@@ -83,7 +83,7 @@ public class MarketHistoryServiceTest {
 
     @Test
     public void getHistory_returnsNotFoundForMissingMarket() {
-        when(marketStore.get("missing")).thenReturn(null);
+        when(marketRepository.loadById("missing")).thenReturn(null);
 
         assertThrows(ResponseStatusException.class,
                 () -> marketHistoryService.getHistory("missing", null, null, 200));

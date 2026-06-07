@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import api.dto.auth.TokenResponse;
 import core.PredictionMarketApplication;
 import core.repository.adapter.db.JpaUserRepository;
-import core.store.UserStore;
 import db.entity.UserEntity;
 
 @SpringBootTest(classes = PredictionMarketApplication.class)
@@ -41,14 +40,10 @@ public class DemoAuthIntegrationTest {
     @Autowired
     private core.repository.adapter.db.JpaRefreshTokenRepository refreshTokenRepository;
 
-    @Autowired
-    private UserStore userStore;
-
     @BeforeEach
     public void setup() {
         refreshTokenRepository.deleteAll();
         userRepository.deleteAll();
-        userStore.clear();
     }
 
     @Test

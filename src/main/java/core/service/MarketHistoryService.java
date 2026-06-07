@@ -13,9 +13,8 @@ import api.dto.MarketHistoryPoint;
 import api.dto.MarketHistoryResponse;
 import core.lmsr.PricingEngine;
 import core.market.Market;
-import core.market.MarketStatus;
 import core.market.Outcome;
-import core.store.MarketStore;
+import core.repository.port.MarketRepository;
 import core.trade.Trade;
 
 @Service
@@ -23,11 +22,11 @@ public class MarketHistoryService {
     private static final int DEFAULT_LIMIT = 200;
     private static final int MAX_LIMIT = 1000;
 
-    private final MarketStore marketStore;
+    private final MarketRepository marketRepository;
     private final TradeService tradeService;
 
-    public MarketHistoryService(MarketStore marketStore, TradeService tradeService) {
-        this.marketStore = marketStore;
+    public MarketHistoryService(MarketRepository marketRepository, TradeService tradeService) {
+        this.marketRepository = marketRepository;
         this.tradeService = tradeService;
     }
 
@@ -39,7 +38,7 @@ public class MarketHistoryService {
             throw new IllegalArgumentException("from must be before or equal to to");
         }
 
-        Market market = marketStore.get(marketId);
+        Market market = marketRepository.loadById(marketId);
         if (market == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Market not found");
         }
@@ -86,8 +85,11 @@ public class MarketHistoryService {
                     trade.getCost()));
         }
 
-        if (market.getStatus() == MarketStatus.RESOLVED && market.getResolvedOutcome() != null
-                && market.getResolvedAt() != null) {
+        // Emit a resolution point as soon as the outcome is decided — i.e. from
+        // RESOLUTION_PENDING onward, not only after the final flip to RESOLVED.
+        // Branches on resolvedOutcome (the load-bearing invariant) rather than
+        // a specific MarketStatus value. See ADR-0003.
+        if (market.getResolvedOutcome() != null && market.getResolvedAt() != null) {
             boolean yesWon = market.getResolvedOutcome() == Outcome.YES;
             points.add(MarketHistoryPoint.resolution(
                     market.getResolvedAt(),

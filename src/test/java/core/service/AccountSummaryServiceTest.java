@@ -18,7 +18,7 @@ import api.dto.UserAccountSummaryResponse;
 import api.dto.UserRecentMarketSummary;
 import core.market.Market;
 import core.market.Outcome;
-import core.store.MarketStore;
+import core.repository.port.MarketRepository;
 import core.trade.Trade;
 import core.user.User;
 
@@ -31,14 +31,14 @@ public class AccountSummaryServiceTest {
     private TradeService tradeService;
 
     @Mock
-    private MarketStore marketStore;
+    private MarketRepository marketRepository;
 
     private AccountSummaryService accountSummaryService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        accountSummaryService = new AccountSummaryService(userService, tradeService, marketStore);
+        accountSummaryService = new AccountSummaryService(userService, tradeService, marketRepository);
     }
 
     @Test
@@ -77,9 +77,9 @@ public class AccountSummaryServiceTest {
         marketC.applyTrade(Outcome.NO, 15.0);
 
         when(tradeService.getTradesByUserIdOrderedDesc("user-1")).thenReturn(trades);
-        when(marketStore.get("market-a")).thenReturn(marketA);
-        when(marketStore.get("market-b")).thenReturn(marketB);
-        when(marketStore.get("market-c")).thenReturn(marketC);
+        when(marketRepository.loadById("market-a")).thenReturn(marketA);
+        when(marketRepository.loadById("market-b")).thenReturn(marketB);
+        when(marketRepository.loadById("market-c")).thenReturn(marketC);
 
         UserAccountSummaryResponse response = accountSummaryService.getSummary("user-1");
 
@@ -119,8 +119,8 @@ public class AccountSummaryServiceTest {
         resolvedMarket.resolveMarket(Outcome.YES);
 
         when(tradeService.getTradesByUserIdOrderedDesc("user-1")).thenReturn(trades);
-        when(marketStore.get("market-open")).thenReturn(openMarket);
-        when(marketStore.get("market-resolved")).thenReturn(resolvedMarket);
+        when(marketRepository.loadById("market-open")).thenReturn(openMarket);
+        when(marketRepository.loadById("market-resolved")).thenReturn(resolvedMarket);
 
         UserAccountSummaryResponse response = accountSummaryService.getSummary("user-1");
 
@@ -145,7 +145,7 @@ public class AccountSummaryServiceTest {
         Market market = new Market("market-1", "Market 1", "Desc");
 
         when(tradeService.getTradesByUserIdOrderedDesc("user-1")).thenReturn(trades);
-        when(marketStore.get("market-1")).thenReturn(market);
+        when(marketRepository.loadById("market-1")).thenReturn(market);
 
         UserAccountSummaryResponse response = accountSummaryService.getSummary("user-1");
         UserRecentMarketSummary summary = response.recentMarkets().get(0);

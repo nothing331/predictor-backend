@@ -56,10 +56,7 @@ public class AuthIntegrationTest {
     private core.service.UserService userService;
 
     @Autowired
-    private core.store.UserStore userStore;
-
-    @Autowired
-    private core.store.MarketStore marketStore;
+    private core.repository.port.MarketRepository marketRepository;
 
     @MockBean
     private GoogleIdTokenVerifier googleIdTokenVerifier;
@@ -75,7 +72,6 @@ public class AuthIntegrationTest {
         refreshTokenRepository.deleteAll();
         tradeRepository.deleteAll();
         userRepository.deleteAll();
-        userStore.clear();
     }
 
     private GoogleIdToken createMockGoogleToken(String sub, String email, String name) {
@@ -409,10 +405,7 @@ public class AuthIntegrationTest {
         marketC.applyTrade(core.market.Outcome.NO, 8.0);
         core.market.Market marketD = new core.market.Market("summary-market-d", "Market D", "Desc");
 
-        marketStore.put(marketA);
-        marketStore.put(marketB);
-        marketStore.put(marketC);
-        marketStore.put(marketD);
+        marketRepository.saveAll(java.util.List.of(marketA, marketB, marketC, marketD));
 
         tradeRepository.saveAll(java.util.List.of(
                 new db.entity.TradeEntity(null, user.getUserId(), "summary-market-c", core.market.Outcome.YES,
@@ -458,7 +451,7 @@ public class AuthIntegrationTest {
         String accessToken = jwtService.generateAccessToken(user);
 
         core.market.Market market = new core.market.Market("position-empty-market", "Position Empty Market", "Desc");
-        marketStore.put(market);
+        marketRepository.saveAll(java.util.List.of(market));
 
         mockMvc.perform(get("/v1/markets/position-empty-market/me")
                 .header("Authorization", "Bearer " + accessToken))
@@ -482,7 +475,7 @@ public class AuthIntegrationTest {
 
         core.market.Market market = new core.market.Market("position-market", "Position Market", "Desc");
         market.resolveMarket(core.market.Outcome.NO);
-        marketStore.put(market);
+        marketRepository.saveAll(java.util.List.of(market));
 
         tradeRepository.saveAll(java.util.List.of(
                 new db.entity.TradeEntity(null, user.getUserId(), "position-market", core.market.Outcome.NO,

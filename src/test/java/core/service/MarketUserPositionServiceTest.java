@@ -17,7 +17,7 @@ import org.springframework.web.server.ResponseStatusException;
 import api.dto.UserMarketPositionResponse;
 import core.market.Market;
 import core.market.Outcome;
-import core.store.MarketStore;
+import core.repository.port.MarketRepository;
 import core.trade.Trade;
 import core.user.User;
 
@@ -30,14 +30,14 @@ public class MarketUserPositionServiceTest {
     private TradeService tradeService;
 
     @Mock
-    private MarketStore marketStore;
+    private MarketRepository marketRepository;
 
     private MarketUserPositionService marketUserPositionService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        marketUserPositionService = new MarketUserPositionService(userService, tradeService, marketStore);
+        marketUserPositionService = new MarketUserPositionService(userService, tradeService, marketRepository);
     }
 
     @Test
@@ -46,7 +46,7 @@ public class MarketUserPositionServiceTest {
         Market market = new Market("market-1", "Market 1", "Desc");
 
         when(userService.getUserById("user-1")).thenReturn(user);
-        when(marketStore.get("market-1")).thenReturn(market);
+        when(marketRepository.loadById("market-1")).thenReturn(market);
         when(tradeService.getTradesByUserIdAndMarketIdOrderedDesc("user-1", "market-1")).thenReturn(List.of());
 
         UserMarketPositionResponse response = marketUserPositionService.getMarketPosition("user-1", "market-1");
@@ -76,7 +76,7 @@ public class MarketUserPositionServiceTest {
                 trade("t1", "user-1", "market-1", Outcome.YES, 4.0, "6.50", "2026-03-27T10:00:00Z"));
 
         when(userService.getUserById("user-1")).thenReturn(user);
-        when(marketStore.get("market-1")).thenReturn(market);
+        when(marketRepository.loadById("market-1")).thenReturn(market);
         when(tradeService.getTradesByUserIdAndMarketIdOrderedDesc("user-1", "market-1")).thenReturn(trades);
 
         UserMarketPositionResponse response = marketUserPositionService.getMarketPosition("user-1", "market-1");
@@ -110,7 +110,7 @@ public class MarketUserPositionServiceTest {
                 trade("t1", "user-1", "market-1", Outcome.NO, 1.5, "2.00", "2026-03-27T10:00:00Z"));
 
         when(userService.getUserById("user-1")).thenReturn(user);
-        when(marketStore.get("market-1")).thenReturn(market);
+        when(marketRepository.loadById("market-1")).thenReturn(market);
         when(tradeService.getTradesByUserIdAndMarketIdOrderedDesc("user-1", "market-1")).thenReturn(trades);
 
         UserMarketPositionResponse response = marketUserPositionService.getMarketPosition("user-1", "market-1");
@@ -127,7 +127,7 @@ public class MarketUserPositionServiceTest {
     @Test
     void returnsNotFoundForMissingMarket() {
         when(userService.getUserById("user-1")).thenReturn(new User("user-1"));
-        when(marketStore.get("missing-market")).thenReturn(null);
+        when(marketRepository.loadById("missing-market")).thenReturn(null);
 
         try {
             marketUserPositionService.getMarketPosition("user-1", "missing-market");

@@ -12,9 +12,8 @@ import org.springframework.web.server.ResponseStatusException;
 import api.dto.UserMarketPositionResponse;
 import api.dto.UserMarketTradeResponse;
 import core.market.Market;
-import core.market.MarketStatus;
 import core.market.Outcome;
-import core.store.MarketStore;
+import core.repository.port.MarketRepository;
 import core.trade.Trade;
 import core.user.User;
 
@@ -23,12 +22,13 @@ public class MarketUserPositionService {
 
     private final UserService userService;
     private final TradeService tradeService;
-    private final MarketStore marketStore;
+    private final MarketRepository marketRepository;
 
-    public MarketUserPositionService(UserService userService, TradeService tradeService, MarketStore marketStore) {
+    public MarketUserPositionService(UserService userService, TradeService tradeService,
+            MarketRepository marketRepository) {
         this.userService = userService;
         this.tradeService = tradeService;
-        this.marketStore = marketStore;
+        this.marketRepository = marketRepository;
     }
 
     public UserMarketPositionResponse getMarketPosition(String userId, String marketId) {
@@ -37,7 +37,7 @@ public class MarketUserPositionService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
 
-        Market market = marketStore.get(marketId);
+        Market market = marketRepository.loadById(marketId);
         if (market == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Market not found");
         }
@@ -59,9 +59,12 @@ public class MarketUserPositionService {
         BigDecimal projectedPayoutIfYes = BigDecimal.valueOf(aggregate.yesSharesHeld());
         BigDecimal projectedPayoutIfNo = BigDecimal.valueOf(aggregate.noSharesHeld());
 
+        // Realized P/L is meaningful as soon as the outcome is known
+        // (RESOLUTION_PENDING) even before the worker has paid out this user.
+        // Branches on resolvedOutcome — see ADR-0003.
         BigDecimal realizedPayout = null;
         BigDecimal realizedNetPnl = null;
-        if (market.getStatus() == MarketStatus.RESOLVED && market.getResolvedOutcome() != null) {
+        if (market.getResolvedOutcome() != null) {
             double winningShares = market.getResolvedOutcome() == Outcome.YES
                     ? aggregate.yesSharesHeld()
                     : aggregate.noSharesHeld();
@@ -93,14 +96,14 @@ public class MarketUserPositionService {
     }
 
     private double currentYesChance(Market market) {
-        if (market.getStatus() == MarketStatus.RESOLVED) {
+        if (market.getResolvedOutcome() != null) {
             return market.getResolvedOutcome() == Outcome.YES ? 1.0 : 0.0;
         }
         return market.getYesPrice();
     }
 
     private double currentNoChance(Market market) {
-        if (market.getStatus() == MarketStatus.RESOLVED) {
+        if (market.getResolvedOutcome() != null) {
             return market.getResolvedOutcome() == Outcome.NO ? 1.0 : 0.0;
         }
         return market.getNoPrice();
