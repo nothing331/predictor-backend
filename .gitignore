@@ -6,11 +6,13 @@ pgadmin_data/
 
 # Environment files
 .env
+.env.*
 
 #DB query
 init-scripts/
 
 #AI files
+.claude/
 AGENTS.md
 predictor-chat.md
 .agent/
