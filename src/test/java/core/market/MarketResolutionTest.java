@@ -38,10 +38,10 @@ public class MarketResolutionTest {
         IllegalStateException exception = assertThrows(
                 IllegalStateException.class,
                 () -> market.resolveMarket(Outcome.YES),
-                "Should throw IllegalStateException when resolving already resolved market");
+                "Should throw IllegalStateException when resolving an already-resolved market");
 
-        assertTrue(exception.getMessage().contains("already resolved"),
-                "Exception message should indicate market is already resolved");
+        assertTrue(exception.getMessage().contains("Only OPEN markets can be resolved"),
+                "Exception message should indicate only OPEN markets can be resolved");
     }
 
     @Test
@@ -56,22 +56,22 @@ public class MarketResolutionTest {
                 () -> market.resolveMarket(Outcome.NO),
                 "Should throw IllegalStateException when trying to change resolution");
 
-        assertTrue(exception.getMessage().contains("already resolved"),
-                "Exception message should indicate market is already resolved");
+        assertTrue(exception.getMessage().contains("Only OPEN markets can be resolved"),
+                "Exception message should indicate only OPEN markets can be resolved");
 
         // Original resolution should be preserved
         assertEquals(Outcome.YES, market.getResolvedOutcome(),
                 "Original resolution should be preserved after failed re-resolution attempt");
-        assertEquals(MarketStatus.RESOLVED, market.getStatus(),
-                "Market status should remain RESOLVED");
+        assertEquals(MarketStatus.RESOLUTION_PENDING, market.getStatus(),
+                "Market status should remain RESOLUTION_PENDING");
     }
 
     @Test
-    @DisplayName("Cannot resolve non-OPEN market (market already RESOLVED)")
+    @DisplayName("Cannot resolve a non-OPEN market (market in RESOLUTION_PENDING)")
     public void testCannotResolveNonOpenMarket() {
         // ARRANGE: First resolve the market
         market.resolveMarket(Outcome.NO);
-        assertEquals(MarketStatus.RESOLVED, market.getStatus());
+        assertEquals(MarketStatus.RESOLUTION_PENDING, market.getStatus());
 
         // ACT & ASSERT: Cannot resolve again
         assertThrows(
@@ -93,8 +93,8 @@ public class MarketResolutionTest {
         // ASSERT
         assertEquals(Outcome.YES, market.getResolvedOutcome(),
                 "Resolved outcome should be YES");
-        assertEquals(MarketStatus.RESOLVED, market.getStatus(),
-                "Market status should be RESOLVED after resolution");
+        assertEquals(MarketStatus.RESOLUTION_PENDING, market.getStatus(),
+                "Market status should be RESOLUTION_PENDING after resolution (payout is async)");
     }
 
     @Test
@@ -110,8 +110,8 @@ public class MarketResolutionTest {
         // ASSERT
         assertEquals(Outcome.NO, market.getResolvedOutcome(),
                 "Resolved outcome should be NO");
-        assertEquals(MarketStatus.RESOLVED, market.getStatus(),
-                "Market status should be RESOLVED after resolution");
+        assertEquals(MarketStatus.RESOLUTION_PENDING, market.getStatus(),
+                "Market status should be RESOLUTION_PENDING after resolution (payout is async)");
     }
 
     @Test

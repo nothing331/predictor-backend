@@ -184,18 +184,26 @@ public class Market {
         }
     }
 
-    // ? on expansion a DB check is still needed
+    /**
+     * Resolution: record the winning {@link Outcome} and move from {@code OPEN}
+     * to {@code RESOLUTION_PENDING}. Settlement runs asynchronously via the
+     * Settlement Worker; the Market does NOT transition directly to
+     * {@code RESOLVED}. See docs/adr/0003-market-lifecycle-four-states.md.
+     *
+     * <p>{@code resolvedAt} is set HERE — it timestamps when the outcome was
+     * decided, not when the last payout completed. The worker's final flip to
+     * {@code RESOLVED} preserves this value.
+     */
     public synchronized void resolveMarket(Outcome outcome) {
         if (outcome == null)
             throw new IllegalArgumentException("Outcome cannot be null");
-        if (status == MarketStatus.RESOLVED)
-            throw new IllegalStateException("Market already resolved");
         if (status != MarketStatus.OPEN) {
-            throw new IllegalStateException("Only OPEN markets can be resolved");
+            throw new IllegalStateException(
+                    "Only OPEN markets can be resolved (current status: " + status + ")");
         }
 
         resolvedOutcome = outcome;
-        status = MarketStatus.RESOLVED;
+        status = MarketStatus.RESOLUTION_PENDING;
         resolvedAt = Instant.now();
     }
 
@@ -209,9 +217,13 @@ public class Market {
             throw new IllegalStateException("Invalid liquidity for market: " + this.marketId);
         }
 
-        // Outcome resolution check
-        if (this.status == MarketStatus.RESOLVED && this.resolvedOutcome == null) {
-            throw new IllegalStateException("Resolved market must have a resolved outcome: " + this.marketId);
+        // Outcome / status invariant: non-OPEN <=> resolvedOutcome != null.
+        // The DTO layer keys on resolvedOutcome (not on the specific non-OPEN state)
+        // when deciding whether to emit LMSR prices or settled certainties.
+        if (this.status != MarketStatus.OPEN && this.resolvedOutcome == null) {
+            throw new IllegalStateException(
+                    "Non-open market must have a resolved outcome: " + this.marketId
+                            + " (status=" + this.status + ")");
         }
         if (this.status == MarketStatus.OPEN && this.resolvedOutcome != null) {
             throw new IllegalStateException("Open market cannot have a resolved outcome: " + this.marketId);

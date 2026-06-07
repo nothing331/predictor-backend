@@ -415,8 +415,8 @@ public class SettlementEngineTest {
                                         () -> settlementEngine.settleUser(user, market),
                                         "Should not be able to settle user on unresolved market");
 
-                        assertTrue(exception.getMessage().contains("must be resolved"),
-                                        "Exception should indicate market must be resolved");
+                        assertTrue(exception.getMessage().contains("OPEN"),
+                                        "Exception should indicate the market is still OPEN and cannot be settled");
                 }
 
                 @Test

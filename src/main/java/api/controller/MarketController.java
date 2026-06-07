@@ -123,17 +123,31 @@ public class MarketController {
         return ResponseEntity.ok(marketUserPositionService.getMarketPosition(principal.getName(), marketId));
     }
 
+    /**
+     * Resolution: record the winning outcome and enqueue async settlement.
+     * Returns {@code 202 Accepted} — payouts have NOT happened yet at the time
+     * this returns. Clients that need to know when settlement is complete
+     * should poll {@code GET /v1/markets/{marketId}} until {@code status}
+     * is {@code RESOLVED} (or {@code SETTLEMENT_FAILED}). The {@code Location}
+     * header points at that resource.
+     *
+     * <p>See:
+     * <ul>
+     *   <li>{@code docs/adr/0002-async-settlement-via-postgres-queue.md}</li>
+     *   <li>{@code docs/adr/0003-market-lifecycle-four-states.md}</li>
+     * </ul>
+     */
     @PostMapping("/{marketId}/resolve")
     public ResponseEntity<?> resolveMarket(@PathVariable String marketId,
             @RequestBody @Valid ResolveMarketRequest request) {
         marketService.resolveMarket(marketId, request.getOutcomeId());
-        return ResponseEntity.ok(
-            java.util.Map.of(
-                "status", "success",
-                "message", "Market resolved successfully.",
-                "marketId", marketId,
-                "resolvedOutcome", request.getOutcomeId()
-            )
-        );
+        return ResponseEntity
+                .accepted()
+                .header("Location", "/v1/markets/" + marketId)
+                .body(java.util.Map.of(
+                        "status", core.market.MarketStatus.RESOLUTION_PENDING.toString(),
+                        "marketId", marketId,
+                        "resolvedOutcome", request.getOutcomeId().toUpperCase(),
+                        "message", "Outcome recorded. Settlement is in progress."));
     }
 }

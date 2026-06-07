@@ -57,20 +57,27 @@ public class SettlementEngine {
     // ======================== PRIVATE HELPERS ========================
 
     /**
-     * Validate that the market is in RESOLVED state.
+     * Validate that the Market has a known Outcome — i.e. is past Resolution.
+     * Under the async settlement model the Market is in
+     * {@code RESOLUTION_PENDING} (not {@code RESOLVED}) for the entire window
+     * during which Positions are being paid out; both states are valid here.
+     * The invariant "non-{@code OPEN} ⇒ {@code resolvedOutcome != null}" is
+     * enforced by {@link Market#validate()}.
+     *
+     * <p>See docs/adr/0003-market-lifecycle-four-states.md.
      */
     private void validateMarketResolved(Market market) {
         if (market == null) {
             throw new IllegalArgumentException("Market cannot be null");
         }
-        if (market.getStatus() != MarketStatus.RESOLVED) {
+        if (market.getStatus() == MarketStatus.OPEN) {
             throw new IllegalStateException(
-                    "Market " + market.getMarketId() + " must be resolved before settlement. Current status: "
-                            + market.getStatus());
+                    "Market " + market.getMarketId() + " is still OPEN; cannot settle");
         }
         if (market.getResolvedOutcome() == null) {
             throw new IllegalStateException(
-                    "Market " + market.getMarketId() + " is resolved but has no resolved outcome");
+                    "Market " + market.getMarketId() + " has no resolved outcome (status="
+                            + market.getStatus() + ")");
         }
     }
 
