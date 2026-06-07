@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import core.event.MarketSettlementCompletedEvent;
+import core.event.MarketSettlementFailedEvent;
 import core.repository.port.MarketRepository;
 import core.repository.port.PositionSettlementRepository;
 
@@ -75,6 +76,9 @@ public class SettlementBookkeeping {
         if (terminal) {
             positionSettlementRepository.markFailed(marketId, userId, newAttempts, cause);
             boolean marketFlipped = marketRepository.markSettlementFailed(marketId);
+            if (marketFlipped) {
+                eventPublisher.publishEvent(new MarketSettlementFailedEvent(marketId));
+            }
             log.warn("Settlement terminally failed for ({}, {}): {} (marketFlipped={})",
                     marketId, userId, cause, marketFlipped);
         } else {

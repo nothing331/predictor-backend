@@ -8,6 +8,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import core.event.MarketCreatedEvent;
 import core.event.MarketResolvedEvent;
 import core.event.MarketSettlementCompletedEvent;
+import core.event.MarketSettlementFailedEvent;
 import core.event.TradeExecutedEvent;
 
 /**
@@ -59,6 +60,11 @@ public class MarketCacheInvalidator {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onMarketSettlementCompleted(MarketSettlementCompletedEvent event) {
+        cache.invalidateMarket(event.marketId());
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onMarketSettlementFailed(MarketSettlementFailedEvent event) {
         cache.invalidateMarket(event.marketId());
     }
 }

@@ -5,26 +5,22 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Published when a Market transitions {@code RESOLUTION_PENDING -> RESOLVED}
- * (the worker paid out the last Position, or Resolution found no Positions to
- * settle). Broadcast over SSE as {@code MarketSettlementCompleted} and consumed
- * by the Redis cache invalidator.
- *
- * <p>The {@code (String marketId)} convenience constructor is kept so existing
- * call sites and the {@link core.cache.MarketCacheInvalidator} listener compile
- * unchanged.
+ * Published when a Market transitions {@code RESOLUTION_PENDING -> SETTLEMENT_FAILED}
+ * (a Position settlement row exhausted its retries or hit a terminal failure).
+ * Broadcast over SSE as {@code MarketSettlementFailed} and consumed by the Redis
+ * cache invalidator. Emitted once per Market, only on the actual status flip.
  */
-public record MarketSettlementCompletedEvent(
+public record MarketSettlementFailedEvent(
         String eventId,
         String type,
         Instant occurredAt,
         String marketId,
         Map<String, Object> payload) implements DomainEvent {
 
-    public MarketSettlementCompletedEvent(String marketId) {
+    public MarketSettlementFailedEvent(String marketId) {
         this(
                 UUID.randomUUID().toString(),
-                "MarketSettlementCompleted",
+                "MarketSettlementFailed",
                 Instant.now(),
                 marketId,
                 Map.of());
