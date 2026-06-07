@@ -42,6 +42,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/v1/markets").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/v1/markets/{marketId}/resolve").hasRole("ADMIN")
+                // Admin-only settlement operations (retry on SETTLEMENT_FAILED markets, etc.).
+                // See docs/adr/0003-market-lifecycle-four-states.md.
+                .requestMatchers("/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .exceptionHandling(eh -> eh
