@@ -13,7 +13,9 @@ public class BuyRequest {
     @Min(value = 1, message = "Amount must be greater than 0")
     private Double amount;
 
-    @NotBlank(message = "clientRequestId cannot be empty")
+    // Optional client-supplied idempotency key. When absent, the server generates
+    // one in TradeService.buy(); note a client that omits it gets no retry-dedup
+    // guarantee, since each retry without an id is treated as a distinct request.
     private String clientRequestId;
 
     public String getOutcome() {

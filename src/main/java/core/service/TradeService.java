@@ -105,8 +105,11 @@ public class TradeService {
 
     @Transactional
     public Trade buy(BuyRequest request, String userId, String marketId) {
+        // clientRequestId is the buy idempotency key. If the client did not supply one,
+        // generate a server-side id so the trade proceeds. Note: a client that omits it
+        // gets no retry-dedup guarantee, since each retry produces a fresh id.
         if (request.getClientRequestId() == null || request.getClientRequestId().isBlank()) {
-            throw new IllegalArgumentException("clientRequestId must not be blank");
+            request.setClientRequestId(java.util.UUID.randomUUID().toString());
         }
 
         // Fast-path idempotency check (no locks). Re-checked after locks below.

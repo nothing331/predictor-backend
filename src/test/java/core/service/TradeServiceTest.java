@@ -1,6 +1,10 @@
 package core.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -16,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.context.ApplicationEventPublisher;
 
+import api.dto.BuyRequest;
 import core.market.Outcome;
 import core.repository.port.MarketRepository;
 import core.repository.port.TradeRepository;
@@ -117,5 +122,30 @@ public class TradeServiceTest {
 
         assertEquals(expectedTrades, actualTrades);
         verify(tradeRepository).loadByUserIdAndMarketIdOrderedDesc(userId, marketId);
+    }
+
+    @Test
+    @DisplayName("buy generates a clientRequestId when the request omits one")
+    void buyGeneratesClientRequestIdWhenMissing() {
+        BuyRequest request = new BuyRequest();
+        request.setOutcome("YES");
+        request.setAmount(200.0);
+        // clientRequestId intentionally left unset (null)
+
+        when(tradeRepository.loadByUserIdAndClientRequestId(eq("user-1"), anyString()))
+                .thenReturn(java.util.Optional.empty());
+        // marketRepository.loadByIdForShare returns null (default) -> "Market not found"
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> tradeService.buy(request, "user-1", "market-1"));
+
+        // Reaching the market lookup proves the blank-clientRequestId guard no longer rejects the request.
+        assertEquals("Market not found: market-1", ex.getMessage());
+
+        // A non-blank id was generated server-side and used for the idempotency lookup.
+        org.mockito.ArgumentCaptor<String> idCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(tradeRepository).loadByUserIdAndClientRequestId(eq("user-1"), idCaptor.capture());
+        assertFalse(idCaptor.getValue() == null || idCaptor.getValue().isBlank());
+        assertFalse(request.getClientRequestId() == null || request.getClientRequestId().isBlank());
     }
 }
